@@ -60,6 +60,11 @@ class UserState:
         if len(x) < self.d:
             x = np.pad(x, (0, self.d - len(x)))
 
+        # Normalize feature so update magnitude is independent of embedding dim
+        x_norm = np.linalg.norm(x)
+        if x_norm > 1e-8:
+            x = x / x_norm
+
         # Update precision matrix
         self._sigma_inv += np.outer(x, x) / noise_var
 
