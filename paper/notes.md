@@ -224,33 +224,50 @@ Don't recommend existing templates. Synthesize novel ad copy, subject lines, cam
 ## 6. Related Work Notes
 
 ### Must-cite
-- Li et al. (2010) — LinUCB, Yahoo contextual bandits
-- Vaswani et al. (2017) — Transformer attention mechanism
-- Zhou et al. (2020) — NeuralUCB
-- Abbasi-Yadkori et al. (2011) — Improved LinUCB regret bounds
-- Kang & McAuley (2018) — SASRec (self-attention for sequential rec)
-- Sun et al. (2019) — BERT4Rec
-- Petrov & Macdonald (2023) — GPT4Rec, generative recommendation
-- Lewis et al. (2020) — RAG: Retrieval-Augmented Generation (the baseline paradigm HARE generalizes)
-- Guu et al. (2020) — REALM: Retrieval-augmented language model pre-training
+- Li et al. (2010) -- LinUCB, Yahoo contextual bandits
+- Vaswani et al. (2017) -- Transformer attention mechanism
+- Zhou et al. (2020) -- NeuralUCB
+- Abbasi-Yadkori et al. (2011) -- Improved LinUCB regret bounds
+- Kang & McAuley (2018) -- SASRec (self-attention for sequential rec)
+- Sun et al. (2019) -- BERT4Rec
+- Petrov & Macdonald (2023) -- GPT4Rec, generative recommendation
+- Lewis et al. (2020) -- RAG: Retrieval-Augmented Generation
+- Guu et al. (2020) -- REALM: Retrieval-augmented language model pre-training
+- **Chowdhury et al. (WACV 2025)** -- Bandit-based attention in Vision Transformers. CLOSEST prior work: injects UCB into attention scores. But (a) vision only, not NLP/rec, (b) uses bandits for token pruning efficiency, not exploration in recommendation. HARE must cite and differentiate.
+- **Srber et al. (NeurIPS 2024 Spotlight)** -- VPL: Variational Preference Learning. Learns user-specific latent z for RLHF. 10-25% improvement in reward prediction. Close to HARE's user modeling, but no exploration mechanism and no generative synthesis from attended knowledge.
+- **Salemi et al. (ACL 2024)** -- LaMP benchmark: 7 personalized LLM tasks. THE standard benchmark for personalized generation. HARE should evaluate on LaMP tasks.
+- **Zhai et al. (ICML 2024, Meta)** -- HSTU: trillion-parameter generative recommendation. 12.4% production gains. Shows industry cares. But no exploration and no user-conditioned attention.
+- **Rajput et al. (NeurIPS 2023)** -- TIGER: generative retrieval with Semantic IDs. Predicts item ID sequences. Still selects existing items, does not synthesize new ones.
 
 ### Should-cite
-- Riquelme et al. (2018) — Deep Bayesian bandits
-- Valko et al. (2013) — Kernel bandits
-- Russo & Van Roy (2014) — Information-directed sampling
-- De Cao et al. (2021) — Autoregressive entity retrieval
-- Tay et al. (2022) — DSI, differentiable search index
-- Borgeaud et al. (2022) — RETRO: improving LMs with retrieved chunks (chunk-level RAG)
-- Salakhutdinov & Mnih (2008) — Bayesian probabilistic matrix factorization (user modeling under uncertainty)
-- Rendle (2010) — Factorization machines (user-item latent interactions)
+- Riquelme et al. (2018) -- Deep Bayesian bandits
+- Valko et al. (2013) -- Kernel bandits
+- Russo & Van Roy (2014) -- Information-directed sampling
+- De Cao et al. (2021) -- Autoregressive entity retrieval
+- Tay et al. (2022) -- DSI, differentiable search index
+- Borgeaud et al. (2022) -- RETRO: improving LMs with retrieved chunks
+- Salakhutdinov & Mnih (2008) -- Bayesian probabilistic matrix factorization
+- Rendle (2010) -- Factorization machines
+- Li et al. (2024, P-RLHF) -- Personalized Language Modeling from Personalized Human Feedback. Joint user model + reward model from preference data.
+- Anonymous (EMNLP 2024) -- Efficient Personalized Large Language Models. Conditions on user history, selects model components per-user.
+- Zhang et al. (2024) -- PPlug: persona embeddings as plug-in for fixed LLMs. 1.4-35.8% improvement on LaMP. Static profiles, no exploration.
+- Geng et al. (RecSys 2022) -- P5: Recommendation as Language Processing. Unifies rec tasks as text-to-text via T5.
+- Wang et al. (AAAI 2022) -- Context Uncertainty in Contextual Bandits (REN). Representation learning + exploration in latent space, but does not modify attention mechanism.
+- arXiv 2506.21931 (2025) -- ARAG: Agentic Retrieval Augmented Generation. Multi-agent personalized RAG. Up to 42% NDCG@5 improvement. Uses agents not bandits; no exploration mechanism.
+- EMNLP 2024 -- Crafting Personalized Agents via RAG on Editable Memory Graphs.
+- Bauer (ACM TRS, 2024) -- RecSys Evaluation Landscape survey. Urges multi-domain evaluation.
 
 ### Novel positioning (what makes HARE different from all of the above)
-- RAG (Lewis, Guu, Borgeaud): retrieves based on query, not user state. No exploration. No feedback loop.
-- Contextual bandits (Li, Zhou): explore/exploit over existing arms, no generation, linear reward models.
-- Attention RecSys (Kang, Sun): non-linear interactions, no exploration, selection-only.
-- Generative RecSys (Petrov): generates ranked lists of existing items, not novel content.
-- User modeling (Salakhutdinov, Rendle): models user-item latent space, but for rating prediction, not generation.
-- **HARE uniquely combines**: user latent state modeling + uncertainty-augmented attention + generative synthesis + online exploration. No prior work does all four.
+
+| Component | Closest prior work | HARE's differentiation |
+|-----------|-------------------|----------------------|
+| Bandit-augmented attention | Chowdhury et al. (WACV 2025) | Vision-only, token pruning. HARE: NLP/rec, exploration for synthesis |
+| User latent state | VPL (NeurIPS 2024), PPlug | Static or reward-only. HARE: Bayesian online update with exploration |
+| Generative synthesis | GPT4Rec, TIGER, HSTU | Generate item IDs or ranked lists. HARE: generates novel content |
+| Personalized retrieval | ARAG (2025), LaMP RAG | Agent-based or static profiles. HARE: uncertainty-driven attention |
+| Exploration mechanism | LinUCB, NeuralUCB, REN | Arm selection only. HARE: exploration injected into attention itself |
+
+The three-way intersection -- (1) bandit exploration in (2) transformer attention for (3) generative recommendation -- has NO existing work. Individual pairs exist (bandits+attention in vision, bandits+recommendation without attention modification, attention+generation without exploration). HARE is the first to combine all three.
 
 ---
 
@@ -367,8 +384,12 @@ from feedback. Ablation study shows HARE outperforms this approach.
 **"The bandit formulation is not novel"**
 Injecting UCB-style uncertainty into transformer attention scores IS novel.
 LinUCB selects arms. NeuralUCB uses neural networks for reward estimation.
-Neither modifies the attention mechanism itself. HARE's uncertainty-augmented
-attention is a new architectural contribution.
+Neither modifies the attention mechanism itself. The closest work is
+Chowdhury et al. (WACV 2025) who inject UCB into vision transformer
+attention -- but for token pruning efficiency in image classification,
+not exploration in recommendation. HARE's contribution is bringing this
+to NLP/recommendation with user-conditioned exploration for generative
+synthesis. Different domain, different purpose, different mechanism.
 
 **"GPT-2 is too small to demonstrate this"**
 The contribution is the attention-UCB-synthesis framework, not the decoder.
@@ -384,19 +405,66 @@ human eval as supporting evidence.
 
 ### 8.5 Related Work to Cite for NLP Defense
 
-- Li et al. (2023) -- "Personalized text generation: A systematic literature review"
-  Surveys the space, identifies gaps HARE fills
-- Salemi et al. (2023) -- "LaMP: When Large Language Models Meet Personalization"
-  Benchmark for personalized text generation, potential evaluation framework
-- Mysore et al. (2023) -- "PEARL: Personalizing LLM responses with retrieval augmentation"
-  Most direct competitor -- personalizes RAG but without exploration or
-  uncertainty modeling. Key difference: PEARL is static, HARE learns.
-- Richardson et al. (2023) -- "User-conditioned generation with retrieval-augmented LMs"
-  Conditions retrieval on user embeddings but no exploration mechanism.
-- Zhang et al. (2024) -- "Recommendation as Language Processing (RLP)"
-  Frames recommendation as NLP task, validates the intersection.
+**Personalized generation (must-cite for NLP venues):**
+- Salemi et al. (ACL 2024) -- LaMP benchmark. 7 personalized LLM tasks.
+  RAG personalization yields +14.92%, RAG+PEFT yields +15.98%.
+  HARE should evaluate on LaMP to show exploration adds value beyond these.
+- Srber et al. (NeurIPS 2024 Spotlight) -- VPL: learns user-specific latent z
+  for reward models. 10-25% improvement. Closest to HARE's user modeling
+  but no exploration mechanism and no generative synthesis from knowledge pool.
+- PPlug (arXiv 2024) -- persona embeddings plugged into frozen LLMs.
+  1.4-35.8% improvement on LaMP. Static profiles, no online learning.
+- P-RLHF (Li et al., 2024) -- joint user model + reward model from
+  preference data. Maps user info into user-specific embeddings.
 
-### 8.6 Minimum Viable NLP Experiment for Paper
+**Bandit + attention (must-cite, primary novelty claim):**
+- Chowdhury et al. (WACV 2025) -- UCB in vision transformer attention.
+  THE closest prior work. 30-36% training time reduction. But vision-only,
+  pruning-focused. HARE: NLP, exploration-focused, for recommendation.
+- Wang et al. (AAAI 2022) -- REN: exploration in latent space for recommendation.
+  But does not modify attention mechanism. HARE injects exploration INTO attention.
+
+**Generative recommendation (context papers):**
+- Zhai et al. (ICML 2024, Meta) -- HSTU: trillion-parameter generative rec.
+  12.4% production gains. Shows industrial relevance of generative rec.
+- Rajput et al. (NeurIPS 2023) -- TIGER: generative retrieval with Semantic IDs.
+  Still predicts existing item IDs, not novel content.
+- Geng et al. (RecSys 2022) -- P5: recommendation as text-to-text.
+- GenRec (ECIR 2024), InstructRec (2023) -- LLM-based recommendation.
+
+**Personalized RAG (differentiation papers):**
+- ARAG (arXiv 2025) -- multi-agent personalized RAG. Up to 42% NDCG@5
+  improvement. Uses agent routing, not bandit exploration. No synthesis.
+- EMNLP 2024 -- Personalized agents via RAG on editable memory graphs.
+
+**Surveys to cite:**
+- KDD 2024 -- "A Review of Modern Recommender Systems Using Generative Models"
+- LREC-COLING 2024 -- "LLMs for Generative Recommendation: Survey"
+- arXiv 2025 -- "Multi-Armed Bandits Meet Large Language Models" (survey)
+- Bauer (ACM TRS, 2024) -- RecSys evaluation landscape
+
+### 8.6 Evaluation Benchmarks Strategy
+
+**Primary (Claude Skills) -- novel domain, shows HARE's unique value:**
+- Fine-tune ConditionedGPT2 on 1,200+ collected skills
+- Evaluate: BERTScore, perplexity, personalization divergence, format accuracy
+- Qualitative demo: 5 users, same query, 5 different outputs
+
+**Secondary (LaMP benchmark) -- standard benchmark, shows generalizability:**
+- LaMP has 7 tasks: 3 classification, 4 generation
+- Focus on generation tasks: personalized headline, email subject, review
+- Standard metrics: ROUGE, MAE, accuracy
+- Compare HARE against LaMP baselines (RAG, PEFT, RAG+PEFT)
+- Key result to show: HARE outperforms RAG+PEFT after interaction rounds
+  (LaMP baselines are static; HARE learns)
+
+**Tertiary (Amazon Reviews subset) -- cross-domain validation:**
+- Use Amazon Reviews 2023 (McAuley-Lab) for a non-skill domain
+- Task: generate personalized review summaries or product descriptions
+- Standard metrics: Recall@K, NDCG@K (for retrieval), BERTScore (for generation)
+- Shows HARE is not Claude-Skills-specific
+
+### 8.7 Minimum Viable NLP Experiment for Paper
 
 If time is limited, the absolute minimum NLP experiment that makes the
 paper publishable at a venue like RecSys or an NLP workshop:
@@ -409,3 +477,20 @@ paper publishable at a venue like RecSys or an NLP workshop:
 6. Compare against vanilla GPT-2 and RAG baselines
 
 This is achievable in 2-3 days of compute + analysis.
+
+### 8.8 Target Venues (updated with landscape knowledge)
+
+**Tier 1 (reach):**
+- RecSys 2026 (primary -- generative recommendation is THE hot topic)
+- NeurIPS 2026 (if we can formalize the regret bound properly)
+
+**Tier 2 (solid fit):**
+- AAAI 2027
+- EMNLP 2026 (if NLP experiments are strong)
+- GenAIRecP 2025/2026 Workshop (co-located with major conferences,
+  specifically about generative AI + personalization in recommendation)
+
+**Tier 3 (fallback):**
+- ACL workshop on personalization
+- KDD workshop on LLM+RecSys
+- arXiv preprint for visibility while revising
