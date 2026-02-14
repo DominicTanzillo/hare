@@ -251,3 +251,161 @@ Don't recommend existing templates. Synthesize novel ad copy, subject lines, cam
 - Generative RecSys (Petrov): generates ranked lists of existing items, not novel content.
 - User modeling (Salakhutdinov, Rendle): models user-item latent space, but for rating prediction, not generation.
 - **HARE uniquely combines**: user latent state modeling + uncertainty-augmented attention + generative synthesis + online exploration. No prior work does all four.
+
+---
+
+## 7. The Steve Jobs Principle
+
+> "People don't know what they want until you show it to them. That's why I
+> never rely on market research. Our task is to read things that are not yet
+> on the page." -- Steve Jobs
+
+This quote captures HARE's philosophical foundation. Traditional recommender
+systems are market research: they ask users what they liked (ratings, clicks)
+and serve more of the same. They optimize for revealed preference over a
+fixed catalogue. They cannot discover latent needs the user hasn't articulated.
+
+HARE inverts this: instead of asking "what did you like?" and matching,
+it asks "what do you *need* that you haven't seen yet?" -- and synthesizes it.
+
+The uncertainty-augmented attention is the mechanism for "reading things that
+are not yet on the page." By exploring uncertain regions of the knowledge
+space conditioned on an evolving user model, HARE discovers what the user
+needs before the user can articulate it. This is the explore-exploit tradeoff
+applied to user understanding, not just item selection.
+
+In the paper, frame this as: **HARE optimizes for latent user need, not
+revealed preference. The exploration mechanism discovers needs that
+selection-based systems cannot even represent.**
+
+---
+
+## 8. NLP Proof of Concept -- Academic Defense Strategy
+
+The key challenge for HARE is demonstrating that it works in real NLP
+contexts, not just synthetic simulations. Here is the evidence chain needed
+to make the paper defensible:
+
+### 8.1 Three Layers of Evidence
+
+**Layer 1: Controlled simulation (already done)**
+- Synthetic environment with known reward structure
+- Proves: HARE's attention-UCB mechanism outperforms LinUCB, RAG, and
+  ablations on cumulative reward
+- Proves: entropy decreases (specificity emerges)
+- Proves: user state matters (ablation shows gap widens over time)
+- Weakness: synthetic data, synthetic reward -- reviewers will ask
+  "does this transfer to real text?"
+
+**Layer 2: Text-domain experiments (critical for NLP venue)**
+- Train ConditionedGPT2 on real Claude Skills data
+- Evaluate generated skills with automated metrics:
+  - Perplexity: does conditioning on z reduce perplexity vs unconditioned?
+  - BERTScore: is the generated skill semantically close to held-out ground truth?
+  - Personalization divergence: do different user states produce measurably
+    different outputs (cosine distance of generated text embeddings)?
+  - Structural validity: does the output follow Claude Skill format?
+    (parseable markdown, has title/trigger/instructions sections)
+- Compare: HARE-conditioned GPT2 vs vanilla fine-tuned GPT2 vs RAG+GPT2
+- This proves the attention-UCB synthesis vector z carries meaningful
+  information into the decoder -- the soft prompt prefix does useful work
+
+**Layer 3: Human evaluation (strongest evidence)**
+- A/B study (see study_design.md)
+- Proves: humans perceive HARE outputs as more relevant and personalized
+- Proves: perceived quality improves over interaction rounds
+- Even a small pilot (N=20) with significant results is publishable
+
+### 8.2 Automated NLP Metrics -- What to Compute
+
+For the Claude Skills domain, compute these for each method:
+
+| Metric | What it measures | HARE should... |
+|--------|-----------------|----------------|
+| Perplexity (conditioned) | How well z predicts the target text | Be lower than unconditioned |
+| BERTScore (F1) | Semantic similarity to held-out skill | Be comparable or higher than RAG |
+| BLEU-4 | N-gram overlap with reference | Be comparable (not key metric) |
+| ROUGE-L | Longest common subsequence | Be comparable (not key metric) |
+| Self-BLEU (diversity) | Diversity across outputs for same query | Be lower (more diverse per-user) |
+| Skill format accuracy | % outputs with valid title/trigger/instructions | Be >= 90% |
+| Personalization divergence | Pairwise cosine distance across users | Be significantly > 0 |
+| Entropy trajectory | H(attention) over interaction rounds | Decrease monotonically |
+
+### 8.3 The "Does It Actually Work in NLP?" Experiment
+
+The most convincing single experiment for an NLP reviewer:
+
+1. Take 5 distinct "user profiles" (defined by interaction history with
+   different skill categories: security, data-eng, frontend, etc.)
+2. Give all 5 users the same query: "I need help writing tests"
+3. Generate outputs from HARE (conditioned on each user's state) and RAG
+4. Show: HARE generates 5 meaningfully different skills, each reflecting
+   the user's domain. Security user gets security-focused testing skill.
+   Data-eng user gets data validation testing skill. Frontend user gets
+   component testing skill.
+5. RAG generates the same output for all 5 users (because the query is
+   identical and RAG is user-independent).
+
+This is a simple, visual, irrefutable demonstration of user-conditioned
+generation. Include it as a qualitative figure in the paper.
+
+### 8.4 Positioning Against Reviewer Objections
+
+**"This is just prompt engineering"**
+No. Prompt engineering conditions on explicit user instructions. HARE
+conditions on a *learned latent state* that evolves from implicit feedback.
+The user never tells HARE what they need -- HARE discovers it through
+exploration.
+
+**"Why not just use RAG with a user profile?"**
+RAG with a user profile would concatenate profile text with the query for
+retrieval. This is: (a) hard-coded, not learned; (b) uses top-k hard
+retrieval, not soft attention-weighted synthesis; (c) has no exploration
+mechanism to discover what the profile is missing; (d) does not update
+from feedback. Ablation study shows HARE outperforms this approach.
+
+**"The bandit formulation is not novel"**
+Injecting UCB-style uncertainty into transformer attention scores IS novel.
+LinUCB selects arms. NeuralUCB uses neural networks for reward estimation.
+Neither modifies the attention mechanism itself. HARE's uncertainty-augmented
+attention is a new architectural contribution.
+
+**"GPT-2 is too small to demonstrate this"**
+The contribution is the attention-UCB-synthesis framework, not the decoder.
+GPT-2 demonstrates the mechanism works. The architecture is decoder-agnostic.
+Scaling to larger models is future work and would only strengthen results.
+
+**"N=20 is too small for human evaluation"**
+Pilot study framing. N=20 with within-subjects design (each participant
+rates all methods) gives 800+ paired comparisons. Medium effects
+(Cohen's d >= 0.45) are detectable at 80% power. If effects are smaller
+than medium, the contribution is the framework + automated metrics, with
+human eval as supporting evidence.
+
+### 8.5 Related Work to Cite for NLP Defense
+
+- Li et al. (2023) -- "Personalized text generation: A systematic literature review"
+  Surveys the space, identifies gaps HARE fills
+- Salemi et al. (2023) -- "LaMP: When Large Language Models Meet Personalization"
+  Benchmark for personalized text generation, potential evaluation framework
+- Mysore et al. (2023) -- "PEARL: Personalizing LLM responses with retrieval augmentation"
+  Most direct competitor -- personalizes RAG but without exploration or
+  uncertainty modeling. Key difference: PEARL is static, HARE learns.
+- Richardson et al. (2023) -- "User-conditioned generation with retrieval-augmented LMs"
+  Conditions retrieval on user embeddings but no exploration mechanism.
+- Zhang et al. (2024) -- "Recommendation as Language Processing (RLP)"
+  Frames recommendation as NLP task, validates the intersection.
+
+### 8.6 Minimum Viable NLP Experiment for Paper
+
+If time is limited, the absolute minimum NLP experiment that makes the
+paper publishable at a venue like RecSys or an NLP workshop:
+
+1. Fine-tune ConditionedGPT2 on 500+ Claude Skills
+2. Generate skills for 5 user profiles x 10 queries = 50 outputs
+3. Compute: BERTScore, personalization divergence, format accuracy
+4. Show learning curve: perplexity decreases over interaction rounds
+5. Qualitative example (the 5-users-same-query demonstration)
+6. Compare against vanilla GPT-2 and RAG baselines
+
+This is achievable in 2-3 days of compute + analysis.
