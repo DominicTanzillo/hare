@@ -10,10 +10,12 @@ Existing recommender systems — whether collaborative filtering, contextual ban
 
 ### 1.1 Setting
 At each round `t = 1, ..., T`:
-- A **user context** `x_t ∈ R^d` arrives (user profile, session features, query)
-- A **content pool** `C = {c_1, ..., c_N}` of existing items with features `X_items ∈ R^{N×d}` is available
-- The system must produce an **output** `y_t` (which may or may not exist in C)
-- The user provides a **reward** `r_t ∈ [0, 1]` (click, rating, engagement)
+- A **query context** `x_t ∈ R^d` arrives (the immediate question/need)
+- A **user latent state** `u_t ∈ R^p` summarizes everything learned about this user from prior interactions (expertise, preferences, goals, style) — with associated uncertainty `Σ_u(t) ∈ R^{p×p}`
+- A **knowledge pool** `K = {k_1, ..., k_N}` of existing content with features `X_knowledge ∈ R^{N×d}` is available (documents, skills, items, domain data)
+- The system must produce an **output** `y_t` — synthesized content tailored to this user's needs (which may or may not resemble anything in K)
+- The user provides a **reward** `r_t ∈ [0, 1]` (explicit rating, implicit engagement, task completion)
+- The system updates `u_{t+1}` and `Σ_u(t+1)` — becoming more certain about this user's needs
 
 ### 1.2 Objective
 Minimize cumulative regret vs. an oracle that always produces the optimal content:
@@ -30,45 +32,175 @@ HARE bridges all three.
 
 ---
 
+## 1B. The Deeper Problem: Personalization Without Slop
+
+### The Specificity Paradox
+
+Every generative system faces the same tradeoff:
+
+- **Too general** → Vague, impersonal, lowest-common-denominator output. This is the "slop" problem. Ask ChatGPT to write you a study plan and you get the same generic 5-step outline regardless of who you are. It's "helpful" the way a billboard is helpful — technically relevant to everyone, actually useful to no one.
+- **Too specific** → Overfits to surface signals. "You clicked on a Python tutorial, here are 47 more Python tutorials." Narrow, repetitive, and often wrong about what the user actually needs (maybe they clicked because they're *done* with Python and exploring alternatives).
+
+The fundamental question HARE answers: **How does a system figure out what a particular user needs for a particular problem — at exactly the right level of specificity — without being told?**
+
+This is not a hyperparameter. It's not a toggle between "general" and "personal." It's an *emergent property* of principled uncertainty modeling.
+
+### Why Current Approaches Fail
+
+**Standard LLMs** have no user model. Two users sending the identical message get outputs drawn from the same distribution. The conversation history provides some context, but there's no mechanism to represent *what the model doesn't know about this user* — so there's no mechanism to explore it.
+
+**RAG (Retrieval-Augmented Generation)** improves grounding but not personalization. RAG does:
+```
+retrieve(query) → context_chunks → generate(query, context_chunks)
+```
+The retrieval step depends on the **query**, not the **user**. Two users with the same question get the same retrieved documents and therefore substantially similar outputs. RAG is better-informed LLM generation, but it's still impersonal.
+
+**Collaborative filtering** ("users like you liked X") personalizes selection but (a) can only select existing items, (b) relies on population-level similarity rather than understanding *this* user's latent state, and (c) has no mechanism for synthesis.
+
+**The missing piece in all of these**: a representation of *what the system doesn't know about the user* and a principled mechanism to reduce that uncertainty through interaction.
+
+### HARE's Solution: The User Uncertainty Model
+
+HARE introduces a **user latent state** `u_t` that evolves over interactions:
+
+```
+u_t = f(x_1, r_1, x_2, r_2, ..., x_t)     # accumulated user state
+Σ_u(t) = uncertainty about u_t              # what we don't know yet
+```
+
+This isn't a static profile. It's a *distribution* over what the user might need, refined by every interaction. The key variables in `u_t`:
+
+| Dimension | What it captures | How it's learned |
+|-----------|-----------------|-----------------|
+| Domain expertise | How much the user already knows | Reward signals on generated complexity level |
+| Specificity preference | Broad overview vs. deep dive | Reward signals on output granularity |
+| Latent goals | What they're actually trying to accomplish | Exploration of uncertain goal dimensions |
+| Style/format | How they prefer information delivered | Reward on format variations |
+
+**The attention mechanism becomes user-conditioned:**
+```
+Q = W_Q · [x_query ⊕ u_t]              # query is BOTH the question AND the user state
+K = W_K · X_knowledge                    # knowledge pool (documents, skills, items)
+U_j = √([x_query ⊕ u_t]^T Σ_j^{-1} [x_query ⊕ u_t])   # uncertainty given THIS user
+A = softmax(QK^T / √d + α · U)          # attend more to uncertain regions
+```
+
+This means: **two users with the same query get different attention patterns** because their user states `u_t` differ, which changes both the relevance scores (QK^T) and the uncertainty bonuses (U).
+
+### How Specificity Emerges
+
+The attention distribution's **entropy** naturally controls specificity:
+
+- **New user / unfamiliar domain** → High `Σ_u` → Large uncertainty bonuses → Attention spreads across many knowledge regions → Output is broader, more exploratory. The system is "casting a wide net" because it doesn't know what this user needs yet.
+
+- **Known user / familiar domain** → Low `Σ_u` → Small uncertainty bonuses → Attention concentrates on specific knowledge regions → Output is precise, personalized. The system has learned what this user needs.
+
+- **Known user / NEW domain** → Low `Σ_u` on some dimensions, high on others → Mixed attention pattern → Output is personalized in style/format but exploratory in content. The system leverages what it knows (how you like information) while exploring what it doesn't (what you need in this new area).
+
+This is the "domain specification" — it's not configured, it **emerges from the interaction history**. The algorithm itself determines the right granularity.
+
+### HARE as RAG 2.0
+
+Reframing HARE in the RAG paradigm makes the contribution concrete:
+
+| Step | RAG | HARE |
+|------|-----|------|
+| **Representation** | Query embedding | Query ⊕ User latent state |
+| **Retrieval** | Top-k by cosine similarity | Uncertainty-augmented attention over full knowledge pool |
+| **What drives retrieval** | The query alone | The query + what the system doesn't know about this user |
+| **Aggregation** | Concatenate chunks | Attention-weighted synthesis (soft blend, not hard selection) |
+| **Generation** | LLM conditioned on retrieved chunks | Fine-tuned decoder conditioned on synthesized representation |
+| **Feedback loop** | None (static) | Reward updates user model + knowledge uncertainty |
+| **Personalization** | None | Emergent from user latent state |
+
+RAG asks: "What documents are relevant to this query?"
+HARE asks: "What knowledge does *this user* need for *this problem*, including knowledge the system hasn't tried presenting yet?"
+
+### Why This Revolutionizes Conversational LLMs
+
+If HARE's user modeling works, it implies a fundamentally different conversational paradigm:
+
+**Current LLM conversations:**
+```
+User message → [static model] → Response
+User message → [static model + conversation context] → Response
+```
+The model is the same for every user. Context helps, but there's no *learning* about the user — no reduction in uncertainty, no exploration strategy, no evolving personalization.
+
+**HARE-augmented conversations:**
+```
+User message → [model + user_state(t) + uncertainty(t)] → Response
+User feedback → update user_state(t+1), reduce uncertainty(t+1)
+User message → [model + user_state(t+1) + uncertainty(t+1)] → Better response
+```
+
+Each turn isn't just answered — it's an opportunity to reduce uncertainty about the user. The model gets *meaningfully better at serving this specific person* over the course of the conversation, not just by accumulating context tokens but by updating a principled probabilistic model of their needs.
+
+This is what makes HARE general: the mechanism (uncertainty-augmented attention over knowledge, conditioned on evolving user state) applies to ANY domain where an LLM serves a user. Claude Skills is the proving ground. Personalized LLM interaction is the endgame.
+
+### The "Figure Out What's Needed" Problem
+
+To be concrete about what "figuring out what someone needs" means algorithmically:
+
+1. **Initial interaction**: High uncertainty across all user dimensions. HARE generates something *deliberately varied* — broad enough to be useful, but with subtle probes across the specificity spectrum. Think of it as a first message that's helpful but also *diagnostic*.
+
+2. **User responds** (explicit feedback or implicit engagement signals): HARE observes which aspects of the output got engagement. Did they click on the detailed section? Skim the overview? Ask a follow-up about a specific subtopic? Each signal updates `u_t` and reduces `Σ_u`.
+
+3. **Next generation**: Attention shifts. Regions of high relevance AND low remaining uncertainty get exploited (specific, personalized content). Regions of high relevance AND high remaining uncertainty get explored (probing questions, varied suggestions). Regions of low relevance get suppressed.
+
+4. **Over multiple interactions**: The system converges on this user's true needs — not the population average, not a stereotype, but a learned model of what *this person* actually needs for *this problem*.
+
+This is why HARE isn't a recommender system that happens to generate. It's a framework for **adaptive, personalized generation with principled exploration**.
+
+---
+
 ## 2. Architecture Overview
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                     HARE Pipeline                    │
-│                                                      │
-│  User Context x_t ──┐                               │
-│                      ▼                               │
-│              ┌──────────────┐                        │
-│              │  Encoder     │  (frozen or fine-tuned  │
-│              │  (LM embed)  │   sentence-transformer) │
-│              └──────┬───────┘                        │
-│                     │                                │
-│  Item Pool X_items ─┤                                │
-│                     ▼                                │
-│  ┌─────────────────────────────────────┐             │
-│  │  Uncertainty-Augmented Attention    │             │
-│  │                                     │             │
-│  │  Q = W_Q · x_user                  │             │
-│  │  K = W_K · X_items                 │             │
-│  │  V = W_V · X_items                 │             │
-│  │  U_ij = √(x_i^T Σ_j^{-1} x_i)    │  ← bandits │
-│  │  A = softmax(QK^T/√d + α·U)       │             │
-│  │  z = A · V                          │             │
-│  └───────────────┬─────────────────────┘             │
-│                  │                                   │
-│                  ▼                                   │
-│  ┌─────────────────────────────────────┐             │
-│  │  Generative Decoder                 │             │
-│  │  (fine-tuned transformer LM)        │             │
-│  │                                     │             │
-│  │  Conditioned on: z ⊕ x_user        │             │
-│  │  Output: novel content y_t          │             │
-│  └───────────────┬─────────────────────┘             │
-│                  │                                   │
-│                  ▼                                   │
-│  y_t (synthesized recommendation)                    │
-│  r_t (user feedback) ──→ update Σ_j, fine-tune      │
-└─────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                         HARE Pipeline                             │
+│                                                                   │
+│  Query x_t ──────────┐                                           │
+│                       ▼                                           │
+│  History ──→ ┌──────────────────┐                                │
+│  (r_1..r_t)  │  User State      │                                │
+│              │  u_t = f(history) │  ← evolving latent model       │
+│              │  Σ_u(t) = uncert. │  ← what we don't know yet     │
+│              └────────┬─────────┘                                │
+│                       │                                           │
+│                       ▼                                           │
+│              ┌──────────────┐                                    │
+│              │  Encoder     │  (frozen or fine-tuned              │
+│              │  (LM embed)  │   sentence-transformer)            │
+│              └──────┬───────┘                                    │
+│                     │                                            │
+│  Knowledge Pool ────┤  (documents, skills, items, domain data)   │
+│  X_knowledge        │                                            │
+│                     ▼                                            │
+│  ┌───────────────────────────────────────────────┐               │
+│  │  Uncertainty-Augmented Attention               │               │
+│  │                                                │               │
+│  │  Q = W_Q · [x_query ⊕ u_t]                   │  ← user-      │
+│  │  K = W_K · X_knowledge                        │    conditioned │
+│  │  V = W_V · X_knowledge                        │               │
+│  │  U_j = √([x⊕u]^T Σ_j^{-1} [x⊕u])           │  ← bandits   │
+│  │  A = softmax(QK^T/√d + α·U)                  │               │
+│  │  z = A · V     (synthesized representation)   │               │
+│  └───────────────────┬───────────────────────────┘               │
+│                      │                                           │
+│                      ▼                                           │
+│  ┌───────────────────────────────────────────────┐               │
+│  │  Generative Decoder                            │               │
+│  │  (fine-tuned transformer LM)                   │               │
+│  │                                                │               │
+│  │  Conditioned on: z ⊕ u_t                      │               │
+│  │  Output: novel content y_t                     │               │
+│  └───────────────────┬───────────────────────────┘               │
+│                      │                                           │
+│                      ▼                                           │
+│  y_t (synthesized, personalized output)                          │
+│  r_t (user feedback) ──→ update u_t, Σ_u, Σ_j, fine-tune       │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -158,18 +290,23 @@ For controlled experiments with known optimal policy:
 ## 5. Experimental Design
 
 ### 5.1 Baselines
-1. **LinUCB** — standard contextual bandit (Li et al., 2010)
+1. **LinUCB** — standard contextual bandit, no user state evolution (Li et al., 2010)
 2. **NeuralUCB** — neural network reward model with UCB (Zhou et al., 2020)
-3. **Attention-only** — cross-attention recommendation without exploration (no U term)
-4. **GPT-2 (vanilla)** — fine-tuned generative model without bandit exploration
-5. **Random** — uniform random selection/generation
+3. **RAG** — retrieve top-k by cosine similarity, generate with LM conditioned on chunks (Lewis et al., 2020). The dominant current paradigm. Query-conditioned, not user-conditioned.
+4. **Attention-only** — cross-attention without uncertainty injection (α=0). Tests whether exploration adds value beyond learned attention.
+5. **GPT-2 (vanilla)** — fine-tuned generative model without bandit exploration or user modeling. Same output for same input regardless of user.
+6. **HARE–user** — HARE without user latent state (query-only Q). Ablation: tests whether user modeling adds value.
+7. **Random** — uniform random selection/generation
 
 ### 5.2 Metrics
 - **Cumulative regret** (simulated environment with known rewards)
 - **Generation quality**: BLEU, ROUGE, BERTScore against held-out high-quality items
+- **Personalization divergence**: Do different users with the same query get meaningfully different outputs? Measure pairwise cosine distance of outputs across users for identical queries. (RAG = ~0 divergence. HARE should show divergence that correlates with user state distance.)
+- **Specificity trajectory**: Attention entropy H(A) over interaction rounds. Should decrease as user uncertainty decreases.
 - **Diversity**: intra-list diversity of generated items across users
 - **Novelty**: % of generated items not in training set (by cosine similarity threshold)
-- **Human evaluation**: small-scale rating of generated skills (1-5 quality, 1-5 relevance)
+- **Learning curve**: Per-user reward trajectory over interactions (does the system get better at serving each individual user?)
+- **Human evaluation**: small-scale rating of generated skills (1-5 quality, 1-5 relevance, 1-5 personalization)
 
 ### 5.3 Ablation Studies
 - HARE with vs. without uncertainty injection (α = 0)
@@ -179,10 +316,12 @@ For controlled experiments with known optimal policy:
 - Covariance update frequency
 
 ### 5.4 Key Hypotheses
-1. HARE achieves lower regret than LinUCB on non-linear reward functions
-2. Uncertainty injection improves generation diversity without sacrificing quality
-3. The generative decoder produces higher-quality output than nearest-neighbor retrieval
-4. Online reward feedback improves generation quality over time
+1. **HARE > LinUCB**: Lower regret on non-linear reward functions (attention captures interactions bandits miss)
+2. **HARE > RAG**: Higher user-rated relevance and quality, especially after multiple interactions (user modeling + exploration)
+3. **Exploration helps**: Uncertainty injection improves generation diversity without sacrificing quality (α > 0 beats α = 0)
+4. **User state matters**: HARE with user modeling beats HARE without it, and the gap *widens* over interactions (the system learns)
+5. **Specificity emerges**: Attention entropy decreases over interactions (output becomes more specific as user uncertainty decreases)
+6. **Synthesis > retrieval**: Generated output is rated higher than best-matching existing item (the ideal item isn't in the catalogue)
 
 ---
 
@@ -190,26 +329,31 @@ For controlled experiments with known optimal policy:
 
 **Title:** HARE: Hybrid Attention-Reinforced Exploration for Generative Recommendation
 
-**Abstract:** ~200 words. Recommender systems select; HARE generates. We inject bandit exploration into transformer attention and decode into novel content.
+**Abstract:** ~200 words. LLMs generate the same output for the same input regardless of who's asking. RAG improves grounding but not personalization. Recommender systems personalize selection but can't generate. HARE unifies these: a user latent state model with uncertainty-augmented attention over a knowledge pool, decoded into novel synthesized content. The system learns what each user needs through principled exploration, with specificity emerging naturally from uncertainty reduction.
 
 ### Sections
-1. **Introduction** — The recommendation-generation gap. Why selecting isn't enough. Motivate with Claude Skills example.
+1. **Introduction** — The personalization gap: LLMs don't model users, RAG doesn't personalize retrieval, recommenders can't generate. The specificity paradox (too general = slop, too specific = overfitting). Motivate with Claude Skills.
 2. **Related Work**
+   - Retrieval-augmented generation (RAG, REALM, RETRO) — and why query-conditioned retrieval is insufficient
    - Contextual bandits (LinUCB, NeuralUCB, Thompson Sampling)
    - Attention-based recommendation (DIN, BERT4Rec, SASRec)
    - Generative recommendation (GPT4Rec, generative retrieval)
+   - User modeling and latent factor models (PMF, factorization machines)
    - Exploration in neural models (curiosity-driven, information gain)
 3. **Method**
-   - Problem formulation
+   - Problem formulation (user latent state, knowledge pool, evolving uncertainty)
+   - User state model and Bayesian update mechanism
    - Uncertainty-augmented attention (the core contribution)
    - Generative synthesis decoder
-   - Online learning with reward feedback
+   - Online learning: the explore → generate → feedback → learn loop
+   - How specificity emerges from attention entropy
    - Regret analysis (theoretical contribution)
 4. **Experiments**
-   - Simulated bandit environment (controlled regret analysis)
+   - Simulated environment (controlled regret + specificity analysis)
    - Claude Skills generation (primary real-world domain)
    - Study plan generation (secondary domain)
-   - Ablation studies
+   - RAG comparison (same knowledge pool, with/without user modeling)
+   - Ablation studies (α, user state, attention heads, feedback loop)
 5. **Results & Discussion**
 6. **Limitations & Future Work**
    - Scaling to large item pools and larger decoder models

@@ -24,14 +24,74 @@ Regret bound: `R(T) = O(d √(T log T))` (Abbasi-Yadkori et al., 2011)
 
 ---
 
+## 1B. Relationship to RAG — Why HARE Is Fundamentally Different
+
+### RAG Pipeline (Lewis et al., 2020)
+```
+q = encode(query)
+D = top_k(cosine(q, doc_embeddings))     # retrieval: query-dependent, user-independent
+output = LLM(query, D)                    # generation: conditioned on query + docs
+```
+
+**Critical limitation**: The retrieval step depends only on the query. Two users asking the same question get the same documents and substantially similar outputs. RAG improves *grounding* but not *personalization*. It has no user model, no exploration mechanism, no learning from feedback.
+
+### HARE Pipeline
+```
+q_user = encode([query ⊕ u_t])           # encode query + user latent state
+A = softmax(QK^T/√d + α·U(Σ_u, Σ_j))   # attend with uncertainty bonuses
+z = A · V                                 # soft synthesis (not hard top-k)
+output = Decoder(z, u_t)                  # generate conditioned on synthesis + user state
+u_{t+1}, Σ_{t+1} = update(u_t, Σ_t, r_t) # learn from feedback
+```
+
+**Key differences:**
+1. Retrieval is **user-conditioned** — different users with the same query attend to different knowledge
+2. Retrieval is **soft** — attention-weighted synthesis, not hard top-k selection
+3. Retrieval is **uncertainty-aware** — explores under-observed knowledge regions
+4. The system **learns** — user state and uncertainty update from feedback
+5. Generation is **user-conditioned** — decoder sees user state, not just retrieved content
+
+### The Specificity Mechanism
+
+The attention entropy H(A) naturally controls output specificity:
+```
+H(A) = -Σ_j A_j log A_j
+```
+
+- New user: high Σ_u → large U terms → flatter A → higher H(A) → broader output
+- Known user: low Σ_u → small U terms → peaked A → lower H(A) → specific output
+
+This is NOT a hyperparameter. It EMERGES from interaction history. The algorithm discovers the right level of personalization for each user-problem pair.
+
+---
+
 ## 2. HARE: Attention-UCB Fusion
 
-### 2.1 Uncertainty-Augmented Attention
+### 2.1 User Latent State Model
+
+The user state `u_t ∈ R^p` is a learned embedding that captures:
+- Domain expertise (how much they know)
+- Specificity preference (broad vs. deep)
+- Latent goals (what they're trying to accomplish)
+- Communication style (how they prefer information)
+
+Update rule (Bayesian linear regression analogue):
+```
+u_{t+1} = u_t + Σ_u(t) · ∇_u log P(r_t | y_t, u_t)   # posterior update
+Σ_u(t+1) = Σ_u(t) - Σ_u(t) · x_t x_t^T · Σ_u(t) / (1 + x_t^T Σ_u(t) x_t)  # uncertainty reduction
+```
+
+This is the mechanism that makes the system "figure out" what the user needs:
+- Each reward signal narrows the uncertainty about the user
+- The uncertainty reduction is proportional to how "informative" the interaction was
+- High-reward responses in novel dimensions provide the most information
+
+### 2.2 Uncertainty-Augmented Attention
 
 Given:
-- User context query: `q = W_Q x_user ∈ R^{d_k}`
-- Item keys: `K = W_K X_items ∈ R^{N×d_k}`
-- Item values: `V = W_V X_items ∈ R^{N×d_v}`
+- User-conditioned query: `q = W_Q [x_query ⊕ u_t] ∈ R^{d_k}`
+- Knowledge keys: `K = W_K X_knowledge ∈ R^{N×d_k}`
+- Knowledge values: `V = W_V X_knowledge ∈ R^{N×d_v}`
 
 Standard attention:
 ```
@@ -40,14 +100,16 @@ A_std = softmax(qK^T / √d_k)
 
 HARE attention adds exploration bonus:
 ```
-U_j = √(q^T Σ_j^{-1} q)    for each item cluster j
+U_j = √(q^T Σ_j^{-1} q)    for each knowledge cluster j
 A_hare = softmax(qK^T / √d_k + α · U)
 ```
 
-Where Σ_j is the covariance matrix for cluster j, updated online:
+Where Σ_j is the covariance matrix for knowledge cluster j, updated online:
 ```
-Σ_j ← Σ_j + Σ_{t: a_t ∈ cluster_j} x_t x_t^T
+Σ_j ← Σ_j + Σ_{t: a_t ∈ cluster_j} q_t q_t^T
 ```
+
+Note: q now includes user state, so Σ_j captures uncertainty about how THIS user relates to this knowledge region — not just global query-knowledge similarity.
 
 ### 2.2 Multi-Head Extension
 
@@ -166,10 +228,11 @@ Don't recommend existing templates. Synthesize novel ad copy, subject lines, cam
 - Vaswani et al. (2017) — Transformer attention mechanism
 - Zhou et al. (2020) — NeuralUCB
 - Abbasi-Yadkori et al. (2011) — Improved LinUCB regret bounds
-- Zhou et al. (2020) — Neural contextual bandits
 - Kang & McAuley (2018) — SASRec (self-attention for sequential rec)
 - Sun et al. (2019) — BERT4Rec
 - Petrov & Macdonald (2023) — GPT4Rec, generative recommendation
+- Lewis et al. (2020) — RAG: Retrieval-Augmented Generation (the baseline paradigm HARE generalizes)
+- Guu et al. (2020) — REALM: Retrieval-augmented language model pre-training
 
 ### Should-cite
 - Riquelme et al. (2018) — Deep Bayesian bandits
@@ -177,3 +240,14 @@ Don't recommend existing templates. Synthesize novel ad copy, subject lines, cam
 - Russo & Van Roy (2014) — Information-directed sampling
 - De Cao et al. (2021) — Autoregressive entity retrieval
 - Tay et al. (2022) — DSI, differentiable search index
+- Borgeaud et al. (2022) — RETRO: improving LMs with retrieved chunks (chunk-level RAG)
+- Salakhutdinov & Mnih (2008) — Bayesian probabilistic matrix factorization (user modeling under uncertainty)
+- Rendle (2010) — Factorization machines (user-item latent interactions)
+
+### Novel positioning (what makes HARE different from all of the above)
+- RAG (Lewis, Guu, Borgeaud): retrieves based on query, not user state. No exploration. No feedback loop.
+- Contextual bandits (Li, Zhou): explore/exploit over existing arms, no generation, linear reward models.
+- Attention RecSys (Kang, Sun): non-linear interactions, no exploration, selection-only.
+- Generative RecSys (Petrov): generates ranked lists of existing items, not novel content.
+- User modeling (Salakhutdinov, Rendle): models user-item latent space, but for rating prediction, not generation.
+- **HARE uniquely combines**: user latent state modeling + uncertainty-augmented attention + generative synthesis + online exploration. No prior work does all four.
