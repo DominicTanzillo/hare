@@ -121,6 +121,44 @@ HARE generalizes the generative retrieval paradigm (De Cao et al., 2021; Tay et 
 
 ---
 
+## 5.1 The Generative Recommendation Thesis
+
+The fundamental claim: **every domain where recommendation means "pick from a catalogue" is a domain where the ideal output may not exist in the catalogue.**
+
+This is why Claude Skills is the perfect proving ground:
+- Structured enough to evaluate quality (valid markdown, correct format)
+- Open-ended enough that generation adds real value (infinite possible skills)
+- Practically useful — synthesized output is immediately deployable
+- Novel application — no prior work on "skill recommendation as generation"
+
+But the thesis generalizes. The pattern everywhere is:
+1. A pool of existing items with rich features (attention K/V)
+2. A user context with specific needs (attention Q)
+3. The optimal output is a synthesis, not a selection
+4. There's an explore-exploit tradeoff in what to synthesize
+
+### Domain Transfer Candidates (for paper §6 and follow-up work)
+
+**Education — Curriculum Synthesis**
+Don't recommend an existing lecture. Generate a custom learning module that bridges this student's specific gaps. The attention mechanism weights relevant pedagogical content; the uncertainty bonus explores unfamiliar teaching approaches.
+
+**Scientific Literature — Research Brief Generation**
+Don't recommend papers to read. Synthesize a novel brief that integrates findings, highlights contradictions, identifies gaps. Attention over paper embeddings, generation conditioned on the researcher's question.
+
+**Drug Discovery — Compound Proposal**
+Don't screen existing compound libraries. Synthesize novel molecular feature vectors that blend properties of known compounds, biased toward under-explored chemical space. Uncertainty injection = exploring unknown regions of the molecular landscape.
+
+**Commerce — Product Design**
+Don't recommend existing products. Synthesize product specifications. With generative manufacturing (3D printing, on-demand), the gap between "recommend" and "design" collapses — HARE fills it.
+
+**Finance — Portfolio Construction**
+Don't select existing funds. Synthesize novel portfolio weightings. Uncertainty injection maps directly to risk/reward tradeoff.
+
+**Marketing — Campaign Generation**
+Don't recommend existing templates. Synthesize novel ad copy, subject lines, campaign briefs. Bandit exploration = generating the A/B variants to test, not testing existing ones.
+
+---
+
 ## 6. Related Work Notes
 
 ### Must-cite

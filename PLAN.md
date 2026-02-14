@@ -212,9 +212,10 @@ For controlled experiments with known optimal policy:
    - Ablation studies
 5. **Results & Discussion**
 6. **Limitations & Future Work**
-   - Scaling to large item pools
-   - Replacing GPT-2 with larger models
-   - Real user studies
+   - Scaling to large item pools and larger decoder models
+   - Real user studies with online feedback convergence
+   - Domain transfer: education (curriculum synthesis), scientific literature (research brief generation), commercial applications (product design, portfolio construction, content generation)
+   - The generative recommendation paradigm as a general framework beyond selection
 7. **Conclusion**
 
 ### Target Venues
@@ -275,7 +276,61 @@ For controlled experiments with known optimal policy:
 
 ---
 
-## 9. Timeline
+## 9. Future Directions: Where Generative Recommendation Creates Value
+
+The core thesis — *synthesize what should exist, don't just select what does* — applies far beyond Claude Skills. Every domain where recommendation currently means "pick from a catalogue" is a domain where HARE could generate something better than anything in the catalogue.
+
+### 9.1 Academic Use Cases
+
+**Personalized Education & Curriculum Design**
+Current EdTech recommends existing courses or lessons. HARE could synthesize a custom learning module that blends the best elements of multiple resources, tuned to the student's knowledge gaps and learning style. A student struggling with Bayesian inference doesn't need "the best existing lecture" — they need a lecture that *doesn't exist yet*, one that bridges their specific prerequisite gaps.
+
+**Scientific Literature Synthesis**
+Researchers drown in papers. Current tools recommend existing papers to read. HARE could synthesize a *novel research brief* — a generated document that integrates findings across multiple papers, highlights contradictions, and identifies gaps. Not "read these 5 papers" but "here's what these 5 papers collectively mean for your question."
+
+**Drug Compound Suggestion**
+Pharmaceutical recommendation currently means screening existing compound libraries. HARE's attention-weighted synthesis over molecular feature spaces could propose *novel molecular structures* that blend properties of known effective compounds, biased toward under-explored regions of chemical space. The uncertainty injection maps directly to the explore-exploit tradeoff in drug discovery.
+
+**Grant Proposal & Research Direction Generation**
+Funding agencies and PIs need to identify promising research directions. Rather than recommending existing funded projects as templates, HARE could synthesize novel research proposals that combine ideas from successful grants in under-explored intersections.
+
+### 9.2 Commercial Use Cases
+
+**Dynamic Product Design / Made-to-Order Commerce**
+E-commerce recommends existing products. With generative manufacturing (3D printing, on-demand production), HARE could synthesize *product specifications* — a shoe design that blends features from items the user browsed, biased toward novel aesthetics they haven't seen. The gap between "recommend a shoe" and "design a shoe for this person" is exactly the gap HARE fills.
+
+**Content Creation at Scale (Marketing, Ad Copy, Email)**
+Marketing platforms recommend existing templates or past campaigns. HARE could generate novel ad copy, email subject lines, or campaign briefs that synthesize what worked across similar audiences while exploring new creative directions. The bandit exploration maps to A/B testing — but instead of testing existing variants, HARE generates the variants to test.
+
+**Financial Portfolio Construction**
+Robo-advisors select from existing funds/ETFs. HARE could synthesize *custom portfolio allocations* that blend strategies from the existing fund universe, with uncertainty injection mapping to the risk/reward tradeoff. Not "buy this ETF" but "here's a novel weighting across these instruments that no existing fund offers."
+
+**Personalized Meal Planning & Nutrition**
+Recipe recommendation selects existing recipes. HARE could synthesize novel recipes optimized for a user's dietary constraints, flavor preferences, and nutritional goals — a meal that doesn't exist in any cookbook but is the attention-weighted blend of what the user would like, with exploration toward new cuisines.
+
+**Enterprise Knowledge Base & Policy Generation**
+Companies recommend existing internal docs. HARE could synthesize *new policy documents, runbooks, or FAQ entries* by attending over the existing knowledge base, identifying gaps, and generating content that should exist but doesn't. Exploration ensures coverage of edge cases.
+
+### 9.3 The Common Thread
+
+In every case, the pattern is identical:
+1. A pool of existing items with rich features (the K/V in attention)
+2. A user context with specific needs (the Q in attention)
+3. Value in novelty — the ideal output may not exist yet
+4. An explore-exploit tradeoff — generating familiar content is safe but suboptimal
+
+This is the fundamental argument for HARE as a *general framework*, not a domain-specific tool. The paper demonstrates it on Claude Skills (structured, evaluable, practical); future work extends to these higher-impact domains.
+
+### 9.4 Roadmap Beyond the Paper
+- **Phase 1 (paper):** Claude Skills generation — proves the framework works
+- **Phase 2:** Multi-domain evaluation (education + one commercial domain) — proves generalizability
+- **Phase 3:** Scale decoder from GPT-2 to larger models — proves the architecture doesn't depend on model size
+- **Phase 4:** Real user studies with online learning — proves the feedback loop converges in practice
+- **Phase 5:** Domain-specific productization (EdTech SaaS, content generation API, portfolio tool)
+
+---
+
+## 10. Timeline
 
 | Week | Milestone |
 |------|-----------|
