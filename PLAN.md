@@ -269,6 +269,20 @@ Primary training domain. Claude Skills are markdown files that follow predictabl
 - Generate synthetic skills using Claude API with controlled variation
 - Create user-skill interaction logs (simulated or from usage analytics)
 
+**Concrete data sources (implemented in `hare/data/collect.py`):**
+1. **fka/awesome-chatgpt-prompts** (HuggingFace) -- 1,131 act/prompt pairs, CC0 license. Maps act->title, prompt->instructions.
+2. **VoltAgent/awesome-agent-skills** (GitHub) -- 300+ agent skills, MIT license. Parsed from structured markdown with YAML frontmatter.
+3. **Jeffallan/claude-skills** (GitHub) -- 66 Claude skills across 12 categories. Parsed from markdown.
+4. **Built-in curated corpus** -- 20 hand-written skills across 8 categories (in `hare/data/skills.py`).
+
+All external data routed through prompt injection validation pipeline (`_validate_skill`). Expected yield: ~1,200-1,500 validated skills after filtering.
+
+**Additional data sources (not yet implemented, for scaling):**
+- danielrosehill/System-Prompt-Library (944 system prompts)
+- GitHub API search for repos with "claude skill" or "system prompt" topics
+- McAuley-Lab/Amazon-Reviews-2023 (cross-domain validation)
+- Goodreads Book Graph (alternative recommendation domain)
+
 **Why this is a good domain:**
 - Structured enough to evaluate quality (does the skill follow valid format?)
 - Open-ended enough to benefit from generation (infinite possible skills)
@@ -306,7 +320,33 @@ For controlled experiments with known optimal policy:
 - **Diversity**: intra-list diversity of generated items across users
 - **Novelty**: % of generated items not in training set (by cosine similarity threshold)
 - **Learning curve**: Per-user reward trajectory over interactions (does the system get better at serving each individual user?)
-- **Human evaluation**: small-scale rating of generated skills (1-5 quality, 1-5 relevance, 1-5 personalization)
+- **Human evaluation**: small-scale rating of generated skills (1-5 quality, 1-5 relevance, 1-5 personalization, 1-5 novelty). Full protocol in `experiments/study_design.md`
+
+### 5.2B NLP Proof of Concept Experiments
+
+The simulation proves the math works. These experiments prove it works in NLP:
+
+**Experiment A: Conditioned generation quality**
+- Fine-tune ConditionedGPT2 on 1,000+ collected Claude Skills
+- Measure: does soft prompt conditioning on HARE's z reduce perplexity vs unconditioned GPT-2?
+- Expected: conditioned perplexity < unconditioned, because z carries relevant information
+
+**Experiment B: User-conditioned generation divergence**
+- Create 5 synthetic user profiles (security, data-eng, frontend, education, productivity)
+- Give identical queries, generate with HARE-conditioned decoder for each user
+- Measure: pairwise cosine distance of generated text embeddings across users
+- Compare: RAG baseline produces near-identical outputs (divergence near 0)
+- Visualize: UMAP of generated embeddings, colored by user profile
+
+**Experiment C: The killer demo**
+- 5 users, same query: "I need help writing tests"
+- HARE generates 5 different skills: security testing, data validation, component testing, etc.
+- RAG generates 1 skill (the same for all users)
+- Include as a qualitative figure in the paper -- visually irrefutable
+
+**Experiment D: Learning curve on real text**
+- Track BERTScore of generated skills against held-out ground truth over 10 interaction rounds
+- HARE's score should improve (user model refines); baselines remain flat
 
 ### 5.3 Ablation Studies
 - HARE with vs. without uncertainty injection (α = 0)
