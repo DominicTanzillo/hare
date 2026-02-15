@@ -1,9 +1,11 @@
 """Three-tier baseline suite for LaMP evaluation.
 
+Supports LaMP-4 (headlines), LaMP-5 (scholarly titles), and LaMP-7 (tweets).
+
 Tier 1 -- Naive baselines:
-    - RandomProfile: randomly select a headline from user's profile
-    - MostRecent: use the most recent profile headline
-    - InputCopy: extract first sentence of article as headline
+    - RandomProfile: randomly select a target from user's profile
+    - MostRecent: use the most recent profile target
+    - InputCopy: extract first sentence of input as output
 
 Tier 2 -- Classical ML:
     - TfidfRetrieval: TF-IDF cosine similarity retrieval from profile
@@ -21,11 +23,82 @@ Each baseline implements the same interface:
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
 from typing import Protocol
 
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+
+
+# =============================================================================
+# Task configuration
+# =============================================================================
+
+@dataclass
+class TaskConfig:
+    """Task-specific configuration for LaMP baselines."""
+    task_name: str              # "LaMP-4", "LaMP-5", "LaMP-7"
+    instruction_prefix: str     # regex pattern to strip from input
+    content_label: str          # "Article", "Abstract", "Tweet"
+    target_label: str           # "Headline", "Title", "Paraphrase"
+    profile_text_key: str       # "text" or "abstract"
+    profile_target_key: str | None  # "title" or None (LaMP-7)
+    max_input_chars: int = 400
+    max_example_chars: int = 200
+
+
+TASK_CONFIGS: dict[str, TaskConfig] = {
+    "lamp4": TaskConfig(
+        task_name="LaMP-4",
+        instruction_prefix=r"^Generate a headline for the following article:\s*",
+        content_label="Article",
+        target_label="Headline",
+        profile_text_key="text",
+        profile_target_key="title",
+    ),
+    "lamp5": TaskConfig(
+        task_name="LaMP-5",
+        instruction_prefix=r"^Generate a title for the following abstract of a paper:\s*",
+        content_label="Abstract",
+        target_label="Title",
+        profile_text_key="abstract",
+        profile_target_key="title",
+    ),
+    "lamp7": TaskConfig(
+        task_name="LaMP-7",
+        instruction_prefix=(
+            r"^Paraphrase the following tweet without any explanation"
+            r" before or after it:\s*"
+        ),
+        content_label="Tweet",
+        target_label="Paraphrase",
+        profile_text_key="text",
+        profile_target_key=None,
+        max_input_chars=280,
+        max_example_chars=140,
+    ),
+}
+
+
+def get_task_config(task: str) -> TaskConfig:
+    """Get task configuration by name. Accepts 'lamp4', 'LaMP-4', etc."""
+    key = task.lower().replace("-", "").replace("_", "")
+    if key not in TASK_CONFIGS:
+        raise ValueError(f"Unknown task: {task}. Choose from: {list(TASK_CONFIGS.keys())}")
+    return TASK_CONFIGS[key]
+
+
+def _get_profile_target(item: dict, cfg: TaskConfig) -> str:
+    """Extract the target text from a profile item using task config."""
+    if cfg.profile_target_key and cfg.profile_target_key in item:
+        return item[cfg.profile_target_key]
+    return item.get("text", "")
+
+
+def _strip_prefix(input_text: str, cfg: TaskConfig) -> str:
+    """Strip the task instruction prefix from input text."""
+    return re.sub(cfg.instruction_prefix, "", input_text, flags=re.IGNORECASE)
 
 
 class Baseline(Protocol):
@@ -40,46 +113,48 @@ class Baseline(Protocol):
 # =============================================================================
 
 class RandomProfile:
-    """Randomly select a headline from the user's profile."""
+    """Randomly select a target from the user's profile."""
     name = "Random (profile)"
 
-    def __init__(self, seed: int = 42) -> None:
+    def __init__(self, seed: int = 42, task_config: TaskConfig | None = None) -> None:
         self.rng = np.random.default_rng(seed)
+        self.task_config = task_config or TASK_CONFIGS["lamp4"]
 
     def predict(self, input_text: str, profile: list[dict]) -> str:
         if not profile:
             return ""
         item = profile[self.rng.integers(0, len(profile))]
-        return item.get("title", item.get("text", ""))
+        return _get_profile_target(item, self.task_config)
 
 
 class MostRecent:
-    """Use the last profile item's headline (assumes temporal ordering)."""
+    """Use the last profile item's target (assumes temporal ordering)."""
     name = "Most Recent"
+
+    def __init__(self, task_config: TaskConfig | None = None) -> None:
+        self.task_config = task_config or TASK_CONFIGS["lamp4"]
 
     def predict(self, input_text: str, profile: list[dict]) -> str:
         if not profile:
             return ""
         item = profile[-1]
-        return item.get("title", item.get("text", ""))
+        return _get_profile_target(item, self.task_config)
 
 
 class InputCopy:
-    """Extract the first sentence of the article as the headline."""
+    """Extract the first sentence of the input as the output."""
     name = "Input Copy"
 
-    _SENTENCE_RE = re.compile(r"(?:Generate a headline for the following article:\s*)?(.+?[.!?])\s", re.DOTALL)
+    _SENTENCE_RE = re.compile(r"(.+?[.!?])\s", re.DOTALL)
+
+    def __init__(self, task_config: TaskConfig | None = None) -> None:
+        self.task_config = task_config or TASK_CONFIGS["lamp4"]
 
     def predict(self, input_text: str, profile: list[dict]) -> str:
-        # Strip the LaMP instruction prefix
-        text = re.sub(
-            r"^Generate a headline for the following article:\s*",
-            "", input_text, flags=re.IGNORECASE,
-        )
+        text = _strip_prefix(input_text, self.task_config)
         match = self._SENTENCE_RE.match(text)
         if match:
             sentence = match.group(1).strip()
-            # Truncate to reasonable headline length
             words = sentence.split()
             return " ".join(words[:15])
         return " ".join(text.split()[:10])
@@ -90,79 +165,77 @@ class InputCopy:
 # =============================================================================
 
 class TfidfRetrieval:
-    """Retrieve the most similar profile headline by TF-IDF cosine similarity.
+    """Retrieve the most similar profile target by TF-IDF cosine similarity.
 
-    For each test article, compute TF-IDF similarity to all profile articles,
-    then return the headline of the most similar profile article.
+    For each test input, compute TF-IDF similarity to all profile texts,
+    then return the target of the most similar profile item.
     """
     name = "TF-IDF Retrieval"
+
+    def __init__(self, task_config: TaskConfig | None = None) -> None:
+        self.task_config = task_config or TASK_CONFIGS["lamp4"]
 
     def predict(self, input_text: str, profile: list[dict]) -> str:
         if not profile:
             return ""
 
-        # Strip instruction prefix
-        article = re.sub(
-            r"^Generate a headline for the following article:\s*",
-            "", input_text, flags=re.IGNORECASE,
-        )
+        cfg = self.task_config
+        content = _strip_prefix(input_text, cfg)
 
-        # Build TF-IDF over profile articles + input
-        profile_texts = [item.get("text", "") for item in profile]
-        all_texts = profile_texts + [article]
+        profile_texts = [item.get(cfg.profile_text_key, "") for item in profile]
+        all_texts = profile_texts + [content]
 
         try:
             vectorizer = TfidfVectorizer(max_features=5000, stop_words="english")
             tfidf = vectorizer.fit_transform(all_texts)
         except ValueError:
-            # Empty vocabulary
-            return profile[0].get("title", "")
+            return _get_profile_target(profile[0], cfg)
 
-        # Cosine similarity between input and each profile article
         input_vec = tfidf[-1:]
         profile_vecs = tfidf[:-1]
         sims = cosine_similarity(input_vec, profile_vecs)[0]
 
         best_idx = int(np.argmax(sims))
-        return profile[best_idx].get("title", profile[best_idx].get("text", ""))
+        return _get_profile_target(profile[best_idx], cfg)
 
 
 class BM25Retrieval:
     """BM25-based retrieval from profile.
 
     Simple BM25 implementation using TF-IDF with sublinear TF and
-    IDF weighting, retrieving the profile headline most relevant
-    to the input article.
+    IDF weighting, retrieving the profile target most relevant
+    to the input.
     """
     name = "BM25 Retrieval"
+
+    def __init__(self, task_config: TaskConfig | None = None) -> None:
+        self.task_config = task_config or TASK_CONFIGS["lamp4"]
 
     def predict(self, input_text: str, profile: list[dict]) -> str:
         if not profile:
             return ""
 
-        article = re.sub(
-            r"^Generate a headline for the following article:\s*",
-            "", input_text, flags=re.IGNORECASE,
-        )
+        cfg = self.task_config
+        content = _strip_prefix(input_text, cfg)
 
-        profile_texts = [item.get("text", "") for item in profile]
-        all_texts = profile_texts + [article]
+        profile_texts = [item.get(cfg.profile_text_key, "") for item in profile]
+        all_texts = profile_texts + [content]
 
         try:
             vectorizer = TfidfVectorizer(
                 max_features=5000, stop_words="english",
-                sublinear_tf=True,  # BM25-like sublinear scaling
+                sublinear_tf=True,
             )
             tfidf = vectorizer.fit_transform(all_texts)
         except ValueError:
-            return profile[0].get("title", "")
+            return _get_profile_target(profile[0], cfg)
 
         input_vec = tfidf[-1:]
         profile_vecs = tfidf[:-1]
         sims = cosine_similarity(input_vec, profile_vecs)[0]
 
         best_idx = int(np.argmax(sims))
-        return profile[best_idx].get("title", profile[best_idx].get("text", ""))
+        return _get_profile_target(profile[best_idx], cfg)
 
 
 # =============================================================================
@@ -170,9 +243,9 @@ class BM25Retrieval:
 # =============================================================================
 
 class VanillaGPT2:
-    """Fine-tuned DistilGPT2 for headline generation (no personalization).
+    """Fine-tuned DistilGPT2 for text generation (no personalization).
 
-    Same model for all users. Input: article text. Output: headline.
+    Same model for all users. Input: content text. Output: target text.
     No user profile is used.
     """
     name = "Vanilla GPT-2"
@@ -182,10 +255,12 @@ class VanillaGPT2:
         model_name: str = "distilgpt2",
         max_new_tokens: int = 32,
         checkpoint: str | None = None,
+        task_config: TaskConfig | None = None,
     ) -> None:
         self.model_name = model_name
         self.max_new_tokens = max_new_tokens
         self.checkpoint = checkpoint
+        self.task_config = task_config or TASK_CONFIGS["lamp4"]
         self._model = None
         self._tokenizer = None
 
@@ -204,11 +279,9 @@ class VanillaGPT2:
         import torch
         self._load()
 
-        article = re.sub(
-            r"^Generate a headline for the following article:\s*",
-            "", input_text, flags=re.IGNORECASE,
-        )
-        prompt = f"Article: {article[:400]}\n\nHeadline:"
+        cfg = self.task_config
+        content = _strip_prefix(input_text, cfg)
+        prompt = f"{cfg.content_label}: {content[:cfg.max_input_chars]}\n\n{cfg.target_label}:"
 
         inputs = self._tokenizer(
             prompt, return_tensors="pt", truncation=True, max_length=480
@@ -225,16 +298,14 @@ class VanillaGPT2:
 
         generated = outputs[0][inputs["input_ids"].shape[1]:]
         text = self._tokenizer.decode(generated, skip_special_tokens=True)
-        # Take first line as headline
-        headline = text.strip().split("\n")[0].strip()
-        return headline
+        return text.strip().split("\n")[0].strip()
 
 
 class RAGGPT2:
     """RAG baseline: retrieve top-k profile items, condition GPT-2 generation.
 
-    Retrieves the k most similar profile articles (by TF-IDF cosine),
-    includes their headlines as few-shot examples, then generates.
+    Retrieves the k most similar profile items (by TF-IDF cosine),
+    includes their targets as few-shot examples, then generates.
     This is the standard RAG approach -- user-independent retrieval.
     """
     name = "RAG + GPT-2"
@@ -245,11 +316,13 @@ class RAGGPT2:
         max_new_tokens: int = 32,
         top_k: int = 3,
         checkpoint: str | None = None,
+        task_config: TaskConfig | None = None,
     ) -> None:
         self.model_name = model_name
         self.max_new_tokens = max_new_tokens
         self.top_k = top_k
         self.checkpoint = checkpoint
+        self.task_config = task_config or TASK_CONFIGS["lamp4"]
         self._model = None
         self._tokenizer = None
 
@@ -264,13 +337,14 @@ class RAGGPT2:
             self._tokenizer.pad_token = self._tokenizer.eos_token
         self._model.eval()
 
-    def _retrieve_examples(self, article: str, profile: list[dict]) -> list[dict]:
+    def _retrieve_examples(self, content: str, profile: list[dict]) -> list[dict]:
         """Retrieve top-k most similar profile items."""
         if not profile:
             return []
 
-        profile_texts = [item.get("text", "") for item in profile]
-        all_texts = profile_texts + [article]
+        cfg = self.task_config
+        profile_texts = [item.get(cfg.profile_text_key, "") for item in profile]
+        all_texts = profile_texts + [content]
 
         try:
             vectorizer = TfidfVectorizer(max_features=5000, stop_words="english")
@@ -287,22 +361,20 @@ class RAGGPT2:
         import torch
         self._load()
 
-        article = re.sub(
-            r"^Generate a headline for the following article:\s*",
-            "", input_text, flags=re.IGNORECASE,
-        )
+        cfg = self.task_config
+        content = _strip_prefix(input_text, cfg)
 
-        # Retrieve similar examples from profile
-        examples = self._retrieve_examples(article, profile)
+        examples = self._retrieve_examples(content, profile)
 
-        # Build few-shot prompt with retrieved examples
         prompt_parts = []
         for ex in examples:
-            ex_text = ex.get("text", "")[:200]
-            ex_title = ex.get("title", "")
-            prompt_parts.append(f"Article: {ex_text}\nHeadline: {ex_title}")
+            ex_text = ex.get(cfg.profile_text_key, "")[:cfg.max_example_chars]
+            ex_target = _get_profile_target(ex, cfg)
+            prompt_parts.append(
+                f"{cfg.content_label}: {ex_text}\n{cfg.target_label}: {ex_target}"
+            )
 
-        prompt_parts.append(f"Article: {article[:300]}\nHeadline:")
+        prompt_parts.append(f"{cfg.content_label}: {content[:cfg.max_input_chars - 100]}\n{cfg.target_label}:")
         prompt = "\n\n".join(prompt_parts)
 
         inputs = self._tokenizer(
@@ -320,8 +392,7 @@ class RAGGPT2:
 
         generated = outputs[0][inputs["input_ids"].shape[1]:]
         text = self._tokenizer.decode(generated, skip_special_tokens=True)
-        headline = text.strip().split("\n")[0].strip()
-        return headline
+        return text.strip().split("\n")[0].strip()
 
 
 class HareGPT2:
@@ -346,12 +417,14 @@ class HareGPT2:
         top_k: int = 3,
         n_warmup: int = 5,
         checkpoint: str | None = None,
+        task_config: TaskConfig | None = None,
     ) -> None:
         self.model_name = model_name
         self.max_new_tokens = max_new_tokens
         self.top_k = top_k
         self.n_warmup = n_warmup
         self.checkpoint = checkpoint
+        self.task_config = task_config or TASK_CONFIGS["lamp4"]
         self._model = None
         self._tokenizer = None
         self._embedder = None
@@ -379,30 +452,29 @@ class HareGPT2:
 
         self._load()
 
-        article = re.sub(
-            r"^Generate a headline for the following article:\s*",
-            "", input_text, flags=re.IGNORECASE,
-        )
+        cfg = self.task_config
+        content = _strip_prefix(input_text, cfg)
 
         if not profile or len(profile) < 2:
-            # Fall back to RAG for tiny profiles
-            return RAGGPT2(self.model_name, self.max_new_tokens, self.top_k).predict(
-                input_text, profile
+            fallback = RAGGPT2(
+                self.model_name, self.max_new_tokens, self.top_k,
+                task_config=cfg,
             )
+            return fallback.predict(input_text, profile)
 
         # Build profile texts for embedding
         profile_texts = []
         for item in profile:
-            text = item.get("text", "")
+            text = item.get(cfg.profile_text_key, "")
             title = item.get("title", "")
             profile_texts.append(f"{title}: {text}" if title else text)
 
         # Fit embedder on this user's profile + the query
         embedder = self._get_embedder()
-        all_texts = profile_texts + [article]
+        all_texts = profile_texts + [content]
         embedder.fit(all_texts)
         profile_embs = embedder.encode(profile_texts)
-        query_emb = embedder.encode([article])[0]
+        query_emb = embedder.encode([content])[0]
         d = profile_embs.shape[1]
 
         # Initialize HARE for this user's profile
@@ -419,13 +491,11 @@ class HareGPT2:
         hare.set_knowledge_pool(profile_embs)
 
         # Warm up user state with profile interactions
-        # Simulate reading through profile items (builds user state)
         n_warmup = min(self.n_warmup, len(profile))
         for i in range(n_warmup):
             result = hare.recommend(
                 profile_embs[i], user_id="user", return_details=True
             )
-            # Reward based on how close the attention was to the actual item
             hare.update(profile_embs[i], "user", reward=0.8, synthesis=result["synthesis"])
 
         # Now recommend for the actual query (user-conditioned)
@@ -440,11 +510,15 @@ class HareGPT2:
         # Generate with retrieved context
         prompt_parts = []
         for ex in examples:
-            ex_text = ex.get("text", "")[:200]
-            ex_title = ex.get("title", "")
-            prompt_parts.append(f"Article: {ex_text}\nHeadline: {ex_title}")
+            ex_text = ex.get(cfg.profile_text_key, "")[:cfg.max_example_chars]
+            ex_target = _get_profile_target(ex, cfg)
+            prompt_parts.append(
+                f"{cfg.content_label}: {ex_text}\n{cfg.target_label}: {ex_target}"
+            )
 
-        prompt_parts.append(f"Article: {article[:300]}\nHeadline:")
+        prompt_parts.append(
+            f"{cfg.content_label}: {content[:cfg.max_input_chars - 100]}\n{cfg.target_label}:"
+        )
         prompt = "\n\n".join(prompt_parts)
 
         inputs = self._tokenizer(
@@ -462,8 +536,7 @@ class HareGPT2:
 
         generated = outputs[0][inputs["input_ids"].shape[1]:]
         text = self._tokenizer.decode(generated, skip_special_tokens=True)
-        headline = text.strip().split("\n")[0].strip()
-        return headline
+        return text.strip().split("\n")[0].strip()
 
 
 # =============================================================================
@@ -473,8 +546,9 @@ class HareGPT2:
 def get_all_baselines(
     include_neural: bool = True,
     checkpoint: str | None = None,
+    task: str = "lamp4",
 ) -> list:
-    """Get instances of all baselines.
+    """Get instances of all baselines for a given LaMP task.
 
     Parameters
     ----------
@@ -483,25 +557,28 @@ def get_all_baselines(
     checkpoint : str or None
         Path to a fine-tuned model checkpoint. If provided, all neural
         baselines use this checkpoint instead of the pretrained model.
+    task : str
+        LaMP task name (e.g. "lamp4", "lamp5", "lamp7").
 
     Returns
     -------
     list of baseline instances
     """
+    cfg = get_task_config(task)
     baselines = [
         # Tier 1: Naive
-        RandomProfile(),
-        MostRecent(),
-        InputCopy(),
+        RandomProfile(task_config=cfg),
+        MostRecent(task_config=cfg),
+        InputCopy(task_config=cfg),
         # Tier 2: Classical ML
-        TfidfRetrieval(),
-        BM25Retrieval(),
+        TfidfRetrieval(task_config=cfg),
+        BM25Retrieval(task_config=cfg),
     ]
     if include_neural:
         baselines.extend([
             # Tier 3: Neural
-            VanillaGPT2(checkpoint=checkpoint),
-            RAGGPT2(checkpoint=checkpoint),
-            HareGPT2(checkpoint=checkpoint),
+            VanillaGPT2(checkpoint=checkpoint, task_config=cfg),
+            RAGGPT2(checkpoint=checkpoint, task_config=cfg),
+            HareGPT2(checkpoint=checkpoint, task_config=cfg),
         ])
     return baselines

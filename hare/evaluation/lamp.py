@@ -1,12 +1,18 @@
 """LaMP benchmark data loading and evaluation for HARE.
 
 LaMP (Language Model Personalization) provides 7 tasks for evaluating
-personalized text generation. We focus on:
+personalized text generation. We support three generation tasks:
 
 - LaMP-4: Personalized News Headline Generation
   Input: article text
   Output: headline
   Profile: list of (article_text, headline) pairs from user's history
+  Metric: ROUGE-1, ROUGE-L
+
+- LaMP-5: Personalized Scholarly Title Generation
+  Input: paper abstract
+  Output: paper title
+  Profile: list of (abstract, title) pairs from author's history
   Metric: ROUGE-1, ROUGE-L
 
 - LaMP-7: Personalized Tweet Paraphrasing
@@ -20,8 +26,8 @@ Reference: Salemi et al., "LaMP: When Large Language Models Meet
            Personalization", ACL 2024.
 
 Usage:
-    from hare.evaluation.lamp import load_lamp4, evaluate_rouge
-    data = load_lamp4(split="dev", max_samples=100)
+    from hare.evaluation.lamp import load_lamp, evaluate_rouge
+    data = load_lamp("lamp4", split="dev", max_samples=100)
     scores = evaluate_rouge(predictions, references)
 """
 
@@ -43,7 +49,7 @@ class LaMPSample:
     id: str
     input_text: str
     target: str
-    profile: list[dict]  # list of {"text": ..., "title": ...} for LaMP-4
+    profile: list[dict]  # e.g. {"text": ..., "title": ...} for LaMP-4
 
 
 @dataclass
@@ -66,6 +72,10 @@ class LaMPDataset:
         for item in sample.profile:
             if "title" in item and "text" in item:
                 texts.append(f"{item['title']}: {item['text']}")
+            elif "title" in item and "abstract" in item:
+                texts.append(f"{item['title']}: {item['abstract']}")
+            elif "abstract" in item:
+                texts.append(item["abstract"])
             elif "text" in item:
                 texts.append(item["text"])
         return texts
@@ -149,6 +159,62 @@ def load_lamp4(
     return LaMPDataset(task="LaMP-4", split=s, samples=samples)
 
 
+def load_lamp5(
+    split: str = "dev",
+    max_samples: int | None = None,
+) -> LaMPDataset:
+    """Load LaMP-5 (Personalized Scholarly Title Generation).
+
+    Parameters
+    ----------
+    split : str
+        One of "train", "dev", "test".
+    max_samples : int or None
+        Limit number of samples.
+
+    Returns
+    -------
+    LaMPDataset
+    """
+    split_map = {"train": "train", "dev": "dev", "val": "dev", "test": "test"}
+    s = split_map.get(split, split)
+
+    questions_url = f"{LAMP_BASE_URL}/LaMP_5/{s}/{s}_questions.json"
+    questions_path = CACHE_DIR / "LaMP_5" / f"{s}_questions.json"
+    _download_file(questions_url, questions_path)
+
+    with open(questions_path, encoding="utf-8") as f:
+        questions = json.load(f)
+
+    outputs_map: dict[str, str] = {}
+    if s != "test":
+        outputs_url = f"{LAMP_BASE_URL}/LaMP_5/{s}/{s}_outputs.json"
+        outputs_path = CACHE_DIR / "LaMP_5" / f"{s}_outputs.json"
+        _download_file(outputs_url, outputs_path)
+
+        with open(outputs_path, encoding="utf-8") as f:
+            outputs_data = json.load(f)
+        for gold in outputs_data.get("golds", []):
+            outputs_map[gold["id"]] = gold["output"]
+
+    samples = []
+    for q in questions:
+        sample_id = str(q["id"])
+        target = outputs_map.get(sample_id, "")
+        samples.append(LaMPSample(
+            id=sample_id,
+            input_text=q["input"],
+            target=target,
+            profile=q.get("profile", []),
+        ))
+        if max_samples and len(samples) >= max_samples:
+            break
+
+    print(f"  Loaded LaMP-5 {s}: {len(samples)} samples, "
+          f"{sum(len(s.profile) for s in samples) / max(len(samples), 1):.1f} avg profile size")
+    return LaMPDataset(task="LaMP-5", split=s, samples=samples)
+
+
 def load_lamp7(
     split: str = "dev",
     max_samples: int | None = None,
@@ -202,6 +268,37 @@ def load_lamp7(
 
     print(f"  Loaded LaMP-7 {s}: {len(samples)} samples")
     return LaMPDataset(task="LaMP-7", split=s, samples=samples)
+
+
+def load_lamp(
+    task: str,
+    split: str = "dev",
+    max_samples: int | None = None,
+) -> LaMPDataset:
+    """Load a LaMP dataset by task name.
+
+    Parameters
+    ----------
+    task : str
+        One of "lamp4", "lamp5", "lamp7" (case-insensitive, dashes/underscores ok).
+    split : str
+        One of "train", "dev", "test".
+    max_samples : int or None
+        Limit number of samples.
+
+    Returns
+    -------
+    LaMPDataset
+    """
+    key = task.lower().replace("-", "").replace("_", "")
+    loaders = {
+        "lamp4": load_lamp4,
+        "lamp5": load_lamp5,
+        "lamp7": load_lamp7,
+    }
+    if key not in loaders:
+        raise ValueError(f"Unknown task: {task}. Choose from: {list(loaders.keys())}")
+    return loaders[key](split=split, max_samples=max_samples)
 
 
 def evaluate_rouge(

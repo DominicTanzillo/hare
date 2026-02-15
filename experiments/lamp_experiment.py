@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
-"""HARE LaMP-4 Benchmark Evaluation.
+"""HARE LaMP Benchmark Evaluation.
 
-Evaluates HARE against 3 tiers of baselines on the LaMP-4 benchmark
-(Personalized News Headline Generation):
+Evaluates HARE against 3 tiers of baselines on LaMP generation tasks:
+
+- LaMP-4: Personalized News Headline Generation
+- LaMP-5: Personalized Scholarly Title Generation
+- LaMP-7: Personalized Tweet Paraphrasing
 
 Tier 1 -- Naive:
     Random Profile, Most Recent, Input Copy
@@ -17,13 +20,16 @@ Metrics: ROUGE-1, ROUGE-L (F1)
 
 Usage:
     # Quick test (10 samples, no neural baselines)
-    python experiments/lamp_experiment.py --max-samples 10 --skip-neural
+    python experiments/lamp_experiment.py --task lamp4 --max-samples 10 --skip-neural
 
-    # Full evaluation (all baselines, 100 samples)
-    python experiments/lamp_experiment.py --max-samples 100
+    # Full evaluation on LaMP-5
+    python experiments/lamp_experiment.py --task lamp5 --max-samples 100
 
-    # Full dev set
-    python experiments/lamp_experiment.py
+    # All tasks (non-neural, 50 samples each)
+    python experiments/lamp_experiment.py --task all --max-samples 50 --skip-neural
+
+    # Full dev set with fine-tuned model
+    python experiments/lamp_experiment.py --task lamp4 --checkpoint checkpoints/lamp4
 """
 
 from __future__ import annotations
@@ -33,21 +39,24 @@ import json
 import time
 from pathlib import Path
 
-from hare.evaluation.lamp import load_lamp4, evaluate_rouge
+from hare.evaluation.lamp import load_lamp, evaluate_rouge
 from hare.evaluation.baselines import get_all_baselines
 
 
 def run_experiment(
+    task: str = "lamp4",
     max_samples: int | None = None,
     skip_neural: bool = False,
     output_path: Path | None = None,
     seed: int = 42,
     checkpoint: str | None = None,
 ) -> dict:
-    """Run LaMP-4 evaluation across all baselines.
+    """Run LaMP evaluation across all baselines.
 
     Parameters
     ----------
+    task : str
+        LaMP task name (e.g. "lamp4", "lamp5", "lamp7").
     max_samples : int or None
         Limit number of evaluation samples.
     skip_neural : bool
@@ -56,22 +65,30 @@ def run_experiment(
         Save results JSON to this path.
     seed : int
         Random seed for reproducibility.
+    checkpoint : str or None
+        Path to fine-tuned model checkpoint.
 
     Returns
     -------
     dict with results per baseline.
     """
+    task_key = task.lower().replace("-", "").replace("_", "")
+
     print("=" * 70)
-    print("HARE LaMP-4 Benchmark: Personalized News Headline Generation")
+    print(f"HARE {task_key.upper()} Benchmark Evaluation")
     print("=" * 70)
 
     # Load data
-    print("\nLoading LaMP-4 dev set...")
-    data = load_lamp4(split="dev", max_samples=max_samples)
+    print(f"\nLoading {task_key} dev set...")
+    data = load_lamp(task_key, split="dev", max_samples=max_samples)
     print(f"  {len(data)} samples loaded\n")
 
     # Get baselines
-    baselines = get_all_baselines(include_neural=not skip_neural, checkpoint=checkpoint)
+    baselines = get_all_baselines(
+        include_neural=not skip_neural,
+        checkpoint=checkpoint,
+        task=task_key,
+    )
 
     # Run evaluation
     all_results = {}
@@ -137,7 +154,8 @@ def run_experiment(
         output_path.parent.mkdir(parents=True, exist_ok=True)
         with open(output_path, "w") as f:
             json.dump({
-                "experiment": "lamp4_evaluation",
+                "experiment": f"{task_key}_evaluation",
+                "task": task_key,
                 "n_samples": len(data),
                 "results": all_results,
             }, f, indent=2)
@@ -151,7 +169,6 @@ def _get_tier(baseline) -> str:
     from hare.evaluation.baselines import (
         RandomProfile, MostRecent, InputCopy,
         TfidfRetrieval, BM25Retrieval,
-        VanillaGPT2, RAGGPT2, HareGPT2,
     )
     if isinstance(baseline, (RandomProfile, MostRecent, InputCopy)):
         return "Tier 1"
@@ -163,7 +180,12 @@ def _get_tier(baseline) -> str:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="HARE LaMP-4 Benchmark Evaluation"
+        description="HARE LaMP Benchmark Evaluation"
+    )
+    parser.add_argument(
+        "--task", type=str, default="lamp4",
+        choices=["lamp4", "lamp5", "lamp7", "all"],
+        help="LaMP task to evaluate (default: lamp4)."
     )
     parser.add_argument(
         "--max-samples", type=int, default=None,
@@ -174,8 +196,8 @@ def main():
         help="Skip Tier 3 neural baselines (faster)."
     )
     parser.add_argument(
-        "--output", type=Path, default=Path("results/lamp4_results.json"),
-        help="Output path for results JSON."
+        "--output", type=Path, default=None,
+        help="Output path for results JSON (default: results/{task}_results.json)."
     )
     parser.add_argument(
         "--checkpoint", type=str, default=None,
@@ -184,13 +206,18 @@ def main():
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
 
-    run_experiment(
-        max_samples=args.max_samples,
-        skip_neural=args.skip_neural,
-        output_path=args.output,
-        seed=args.seed,
-        checkpoint=args.checkpoint,
-    )
+    tasks = ["lamp4", "lamp5", "lamp7"] if args.task == "all" else [args.task]
+
+    for task in tasks:
+        output = args.output or Path(f"results/{task}_results.json")
+        run_experiment(
+            task=task,
+            max_samples=args.max_samples,
+            skip_neural=args.skip_neural,
+            output_path=output,
+            seed=args.seed,
+            checkpoint=args.checkpoint,
+        )
 
 
 if __name__ == "__main__":

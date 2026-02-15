@@ -1,25 +1,27 @@
 #!/usr/bin/env python3
-"""Fine-tune DistilGPT2 on LaMP-4 headline generation.
+"""Fine-tune DistilGPT2 on LaMP generation tasks.
+
+Supports LaMP-4 (headlines), LaMP-5 (scholarly titles), and LaMP-7 (tweets).
 
 All three neural baselines (Vanilla GPT-2, RAG+GPT-2, HARE+GPT-2) share the
 same fine-tuned base model. They differ only in how context is constructed at
 inference time:
-  - Vanilla: article only
-  - RAG: article + TF-IDF-retrieved profile examples
-  - HARE: article + user-conditioned attention-retrieved examples
+  - Vanilla: content only
+  - RAG: content + TF-IDF-retrieved profile examples
+  - HARE: content + user-conditioned attention-retrieved examples
 
-This script fine-tunes DistilGPT2 on the LaMP-4 training set using the format:
-    Article: {article_text}\n\nHeadline: {headline}<eos>
+This script fine-tunes DistilGPT2 on the training set using the format:
+    {ContentLabel}: {content_text}\n\n{TargetLabel}: {target}<eos>
 
 Usage:
     # Quick test (100 samples, 1 epoch)
-    python experiments/train_lamp.py --max-samples 100 --epochs 1
+    python experiments/train_lamp.py --task lamp4 --max-samples 100 --epochs 1
 
-    # Full training
-    python experiments/train_lamp.py --epochs 3 --batch-size 8
+    # Full training on LaMP-5
+    python experiments/train_lamp.py --task lamp5 --epochs 3 --batch-size 8
 
     # Resume from checkpoint
-    python experiments/train_lamp.py --resume checkpoints/lamp4/
+    python experiments/train_lamp.py --task lamp4 --resume checkpoints/lamp4/
 """
 
 from __future__ import annotations
@@ -39,16 +41,17 @@ from transformers import (
     get_linear_schedule_with_warmup,
 )
 
-from hare.evaluation.lamp import load_lamp4
+from hare.evaluation.lamp import load_lamp
+from hare.evaluation.baselines import get_task_config, TaskConfig
 
 
-class LaMP4Dataset(Dataset):
-    """LaMP-4 headline generation dataset for causal LM fine-tuning.
+class LaMPTrainDataset(Dataset):
+    """LaMP training dataset for causal LM fine-tuning.
 
     Each sample is formatted as:
-        Article: {truncated_article}\n\nHeadline: {headline}<eos>
+        {ContentLabel}: {truncated_content}\n\n{TargetLabel}: {target}<eos>
 
-    The loss is computed only on the headline tokens (teacher forcing).
+    The loss is computed only on the target tokens (teacher forcing).
     """
 
     def __init__(
@@ -56,12 +59,14 @@ class LaMP4Dataset(Dataset):
         data,
         tokenizer,
         max_length: int = 256,
+        task_config: TaskConfig | None = None,
         include_profile_examples: bool = False,
         n_examples: int = 2,
     ) -> None:
         self.samples = data.samples
         self.tokenizer = tokenizer
         self.max_length = max_length
+        self.task_config = task_config or get_task_config("lamp4")
         self.include_profile_examples = include_profile_examples
         self.n_examples = n_examples
 
@@ -70,24 +75,31 @@ class LaMP4Dataset(Dataset):
 
     def _format_sample(self, sample) -> tuple[str, str]:
         """Format a sample into prompt and target."""
-        article = re.sub(
-            r"^Generate a headline for the following article:\s*",
+        cfg = self.task_config
+        content = re.sub(
+            cfg.instruction_prefix,
             "", sample.input_text, flags=re.IGNORECASE,
         )
 
         if self.include_profile_examples and sample.profile:
-            # Include a few profile examples as few-shot context
             n = min(self.n_examples, len(sample.profile))
             examples = sample.profile[:n]
             parts = []
             for ex in examples:
-                ex_text = ex.get("text", "")[:150]
-                ex_title = ex.get("title", "")
-                parts.append(f"Article: {ex_text}\nHeadline: {ex_title}")
-            parts.append(f"Article: {article[:300]}\nHeadline:")
+                ex_text = ex.get(cfg.profile_text_key, "")[:cfg.max_example_chars - 50]
+                if cfg.profile_target_key and cfg.profile_target_key in ex:
+                    ex_target = ex[cfg.profile_target_key]
+                else:
+                    ex_target = ex.get("text", "")
+                parts.append(
+                    f"{cfg.content_label}: {ex_text}\n{cfg.target_label}: {ex_target}"
+                )
+            parts.append(
+                f"{cfg.content_label}: {content[:cfg.max_input_chars - 100]}\n{cfg.target_label}:"
+            )
             prompt = "\n\n".join(parts)
         else:
-            prompt = f"Article: {article[:400]}\nHeadline:"
+            prompt = f"{cfg.content_label}: {content[:cfg.max_input_chars]}\n{cfg.target_label}:"
 
         return prompt, sample.target
 
@@ -109,7 +121,7 @@ class LaMP4Dataset(Dataset):
         input_ids = encoding["input_ids"].squeeze(0)
         attention_mask = encoding["attention_mask"].squeeze(0)
 
-        # Create labels: -100 for prompt tokens (only train on headline)
+        # Create labels: -100 for prompt tokens (only train on target)
         prompt_encoding = self.tokenizer(
             prompt + " ",
             truncation=True,
@@ -129,27 +141,36 @@ class LaMP4Dataset(Dataset):
         }
 
 
-def train_lamp4(
+def train_lamp(
+    task: str = "lamp4",
     model_name: str = "distilgpt2",
     max_samples: int | None = None,
     epochs: int = 3,
     batch_size: int = 8,
     learning_rate: float = 5e-5,
     max_length: int = 256,
-    output_dir: str = "checkpoints/lamp4",
+    output_dir: str | None = None,
     resume_from: str | None = None,
     seed: int = 42,
 ) -> Path:
-    """Fine-tune DistilGPT2 on LaMP-4 headline generation.
+    """Fine-tune DistilGPT2 on a LaMP generation task.
 
     Returns the path to the saved checkpoint.
     """
+    task_key = task.lower().replace("-", "").replace("_", "")
+    task_config = get_task_config(task_key)
+
+    if output_dir is None:
+        output_dir = f"checkpoints/{task_key}"
+
     torch.manual_seed(seed)
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     print("=" * 60)
-    print("LaMP-4 Fine-tuning: DistilGPT2 for Headline Generation")
+    print(f"{task_config.task_name} Fine-tuning: DistilGPT2 for "
+          f"{task_config.target_label} Generation")
     print("=" * 60)
+    print(f"  Task: {task_config.task_name}")
     print(f"  Model: {model_name}")
     print(f"  Device: {device}")
     print(f"  Epochs: {epochs}")
@@ -171,19 +192,23 @@ def train_lamp4(
 
     model.to(device)
 
-    # Load LaMP-4 training data
-    print("\nLoading LaMP-4 training set...")
-    train_data = load_lamp4(split="train", max_samples=max_samples)
+    # Load training data
+    print(f"\nLoading {task_config.task_name} training set...")
+    train_data = load_lamp(task_key, split="train", max_samples=max_samples)
     print(f"  {len(train_data)} training samples")
 
     # Load small dev set for validation
-    print("Loading LaMP-4 dev set (for validation)...")
-    val_data = load_lamp4(split="dev", max_samples=min(50, max_samples or 50))
+    print(f"Loading {task_config.task_name} dev set (for validation)...")
+    val_data = load_lamp(task_key, split="dev", max_samples=min(50, max_samples or 50))
     print(f"  {len(val_data)} validation samples")
 
     # Create datasets
-    train_dataset = LaMP4Dataset(train_data, tokenizer, max_length)
-    val_dataset = LaMP4Dataset(val_data, tokenizer, max_length)
+    train_dataset = LaMPTrainDataset(
+        train_data, tokenizer, max_length, task_config=task_config,
+    )
+    val_dataset = LaMPTrainDataset(
+        val_data, tokenizer, max_length, task_config=task_config,
+    )
 
     train_loader = DataLoader(
         train_dataset, batch_size=batch_size, shuffle=True, num_workers=0,
@@ -276,12 +301,13 @@ def train_lamp4(
     print("=" * 60)
 
     model.eval()
+    cfg = task_config
     for i, sample in enumerate(val_data.samples[:3]):
-        article = re.sub(
-            r"^Generate a headline for the following article:\s*",
+        content = re.sub(
+            cfg.instruction_prefix,
             "", sample.input_text, flags=re.IGNORECASE,
         )
-        prompt = f"Article: {article[:400]}\nHeadline:"
+        prompt = f"{cfg.content_label}: {content[:cfg.max_input_chars]}\n{cfg.target_label}:"
 
         inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=200)
         inputs = {k: v.to(device) for k, v in inputs.items()}
@@ -297,13 +323,15 @@ def train_lamp4(
             )
 
         generated = outputs[0][inputs["input_ids"].shape[1]:]
-        headline = tokenizer.decode(generated, skip_special_tokens=True).strip().split("\n")[0]
+        text = tokenizer.decode(generated, skip_special_tokens=True).strip().split("\n")[0]
         print(f"\n  Sample {i+1}:")
         print(f"    Reference: {sample.target}")
-        print(f"    Generated: {headline}")
+        print(f"    Generated: {text}")
 
     # Save training metadata
     meta = {
+        "task": task_key,
+        "task_name": task_config.task_name,
         "model_name": model_name,
         "epochs": epochs,
         "batch_size": batch_size,
@@ -325,7 +353,12 @@ def train_lamp4(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Fine-tune DistilGPT2 on LaMP-4 headline generation"
+        description="Fine-tune DistilGPT2 on LaMP generation tasks"
+    )
+    parser.add_argument(
+        "--task", default="lamp4",
+        choices=["lamp4", "lamp5", "lamp7"],
+        help="LaMP task to train on (default: lamp4).",
     )
     parser.add_argument("--model", default="distilgpt2", help="Base model name")
     parser.add_argument("--max-samples", type=int, default=None,
@@ -334,12 +367,14 @@ def main():
     parser.add_argument("--batch-size", type=int, default=8)
     parser.add_argument("--lr", type=float, default=5e-5)
     parser.add_argument("--max-length", type=int, default=256)
-    parser.add_argument("--output-dir", default="checkpoints/lamp4")
+    parser.add_argument("--output-dir", default=None,
+                        help="Output dir (default: checkpoints/{task})")
     parser.add_argument("--resume", default=None, help="Resume from checkpoint dir")
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
 
-    train_lamp4(
+    train_lamp(
+        task=args.task,
         model_name=args.model,
         max_samples=args.max_samples,
         epochs=args.epochs,
