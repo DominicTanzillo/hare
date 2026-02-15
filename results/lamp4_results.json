@@ -1,0 +1,187 @@
+{
+  "experiment": "lamp4_evaluation",
+  "task": "lamp4",
+  "n_samples": 100,
+  "results": {
+    "Random (profile)": {
+      "tier": "Tier 1",
+      "scores": {
+        "rouge1": 0.08904063607175292,
+        "rougeL": 0.08827140530252216,
+        "n_samples": 100,
+        "time_seconds": 0.0
+      },
+      "sample_predictions": [
+        {
+          "id": "310",
+          "prediction": "Summer Safety Tips for Your Children",
+          "reference": "Social Media Gone Awry: Tips for Teens to Stay Safe"
+        },
+        {
+          "id": "311",
+          "prediction": "The Anxiety of Hiring a Nanny: Tips for the Screening Process",
+          "reference": "Summer Safety Tips for Your Children"
+        },
+        {
+          "id": "312",
+          "prediction": "Walking Alone: When is My Child Ready?",
+          "reference": "Home Alone After School: Is Your Child Ready?"
+        },
+        {
+          "id": "313",
+          "prediction": "Why Am I So Tired All The Time?",
+          "reference": "The Art of Parenting"
+        },
+        {
+          "id": "314",
+          "prediction": "The 10 Best Books For Grownups In 2014",
+          "reference": "10 New Books Everyone Should Read This Summer"
+        }
+      ]
+    },
+    "Most Recent": {
+      "tier": "Tier 1",
+      "scores": {
+        "rouge1": 0.052462537446519575,
+        "rougeL": 0.05174825173223386,
+        "n_samples": 100,
+        "time_seconds": 0.0
+      },
+      "sample_predictions": [
+        {
+          "id": "310",
+          "prediction": "Protecting your child after a disclosure of sexual abuse:  What parents need to know. By Mary L. Pulido, Ph.D.",
+          "reference": "Social Media Gone Awry: Tips for Teens to Stay Safe"
+        },
+        {
+          "id": "311",
+          "prediction": "Protecting your child after a disclosure of sexual abuse:  What parents need to know. By Mary L. Pulido, Ph.D.",
+          "reference": "Summer Safety Tips for Your Children"
+        },
+        {
+          "id": "312",
+          "prediction": "Protecting your child after a disclosure of sexual abuse:  What parents need to know. By Mary L. Pulido, Ph.D.",
+          "reference": "Home Alone After School: Is Your Child Ready?"
+        },
+        {
+          "id": "313",
+          "prediction": "Why You Should Save for College",
+          "reference": "The Art of Parenting"
+        },
+        {
+          "id": "314",
+          "prediction": "Why You Should Save for College",
+          "reference": "10 New Books Everyone Should Read This Summer"
+        }
+      ]
+    },
+    "Input Copy": {
+      "tier": "Tier 1",
+      "scores": {
+        "rouge1": 0.10702637029567302,
+        "rougeL": 0.0916771497605459,
+        "n_samples": 100,
+        "time_seconds": 0.0
+      },
+      "sample_predictions": [
+        {
+          "id": "310",
+          "prediction": "Here are a few tips to keep your teen safe when using the Internet and",
+          "reference": "Social Media Gone Awry: Tips for Teens to Stay Safe"
+        },
+        {
+          "id": "311",
+          "prediction": "The New York Society for the Prevention of Cruelty to Children (NYSPCC), the first child",
+          "reference": "Summer Safety Tips for Your Children"
+        },
+        {
+          "id": "312",
+          "prediction": "Parents need to be sure their children have the skills and maturity to handle being",
+          "reference": "Home Alone After School: Is Your Child Ready?"
+        },
+        {
+          "id": "313",
+          "prediction": "There is no right way to raise your children.",
+          "reference": "The Art of Parenting"
+        },
+        {
+          "id": "314",
+          "prediction": "So many books, so few hours at the beach!",
+          "reference": "10 New Books Everyone Should Read This Summer"
+        }
+      ]
+    },
+    "TF-IDF Retrieval": {
+      "tier": "Tier 2",
+      "scores": {
+        "rouge1": 0.10588699382051518,
+        "rougeL": 0.09475217759004678,
+        "n_samples": 100,
+        "time_seconds": 0.2
+      },
+      "sample_predictions": [
+        {
+          "id": "310",
+          "prediction": "Stop Bullying: Teach Your Child Empathy and Limit Their Intake of Violence",
+          "reference": "Social Media Gone Awry: Tips for Teens to Stay Safe"
+        },
+        {
+          "id": "311",
+          "prediction": "Summer Camp Safety: Essential Questions Parents Should Ask",
+          "reference": "Summer Safety Tips for Your Children"
+        },
+        {
+          "id": "312",
+          "prediction": "Protecting your child after a disclosure of sexual abuse:  What parents need to know. By Mary L. Pulido, Ph.D.",
+          "reference": "Home Alone After School: Is Your Child Ready?"
+        },
+        {
+          "id": "313",
+          "prediction": "Saying Farewell To Our Family Home After 24 Years",
+          "reference": "The Art of Parenting"
+        },
+        {
+          "id": "314",
+          "prediction": "Why The Empty Nest Can Be A Very Scary Place",
+          "reference": "10 New Books Everyone Should Read This Summer"
+        }
+      ]
+    },
+    "BM25 Retrieval": {
+      "tier": "Tier 2",
+      "scores": {
+        "rouge1": 0.10545126397302063,
+        "rougeL": 0.09431644774255223,
+        "n_samples": 100,
+        "time_seconds": 0.2
+      },
+      "sample_predictions": [
+        {
+          "id": "310",
+          "prediction": "Stop Bullying: Teach Your Child Empathy and Limit Their Intake of Violence",
+          "reference": "Social Media Gone Awry: Tips for Teens to Stay Safe"
+        },
+        {
+          "id": "311",
+          "prediction": "Summer Camp Safety: Essential Questions Parents Should Ask",
+          "reference": "Summer Safety Tips for Your Children"
+        },
+        {
+          "id": "312",
+          "prediction": "Protecting your child after a disclosure of sexual abuse:  What parents need to know. By Mary L. Pulido, Ph.D.",
+          "reference": "Home Alone After School: Is Your Child Ready?"
+        },
+        {
+          "id": "313",
+          "prediction": "Saying Farewell To Our Family Home After 24 Years",
+          "reference": "The Art of Parenting"
+        },
+        {
+          "id": "314",
+          "prediction": "Why The Empty Nest Can Be A Very Scary Place",
+          "reference": "10 New Books Everyone Should Read This Summer"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,187 @@
+{
+  "experiment": "lamp7_evaluation",
+  "task": "lamp7",
+  "n_samples": 100,
+  "results": {
+    "Random (profile)": {
+      "tier": "Tier 1",
+      "scores": {
+        "rouge1": 0.09599051796981123,
+        "rougeL": 0.08154399719015235,
+        "n_samples": 100,
+        "time_seconds": 0.0
+      },
+      "sample_predictions": [
+        {
+          "id": "610",
+          "prediction": "right.. i'm gonna try do less tweeting tonight about #bgt  but i want aiden, hollie, the evans family &amp; that man/woman gred dude! =/",
+          "reference": "got a busy day today.. but i'm bored right now "
+        },
+        {
+          "id": "611",
+          "prediction": "@JustcallmeMac 'Bout halfway through Skin Trade by Laurell Hamilton. Anita has her US Marshall hat on in this one ",
+          "reference": "I really wish Torchwood Children of Earth was on now "
+        },
+        {
+          "id": "612",
+          "prediction": "Doing work!!! Homework that is  1 wk left before FINALS its crunch time...",
+          "reference": "Enjoying the cool weather as I walk to my Anthro class  I love the cali weather..."
+        },
+        {
+          "id": "613",
+          "prediction": "@Jonasbrothers Lovin' all of the songs from LVATT! My favorite is Much Better. ",
+          "reference": "@ItsChelseaStaub Awesome!! Can't wait to watch it!! Except I live in Australia so we won't be able to see it until next month! "
+        },
+        {
+          "id": "614",
+          "prediction": "@monagrayson I grow those - They rock! I love all peppers actually-I will try that ",
+          "reference": "@Uheard Yes, I have noticed some stores have generics on laundry, dishwasher soaps &amp; fabric softners - Now I'm in love w/my clothesline "
+        }
+      ]
+    },
+    "Most Recent": {
+      "tier": "Tier 1",
+      "scores": {
+        "rouge1": 0.09136283204970398,
+        "rougeL": 0.0747947331623163,
+        "n_samples": 100,
+        "time_seconds": 0.0
+      },
+      "sample_predictions": [
+        {
+          "id": "610",
+          "prediction": "@rosiej i have to watch home &amp; away on youtube cos aus are two weeks ahead of us ",
+          "reference": "got a busy day today.. but i'm bored right now "
+        },
+        {
+          "id": "611",
+          "prediction": "@bbricke My real job is a code monkey  Just another language. I'm lucky enough to know a few.",
+          "reference": "I really wish Torchwood Children of Earth was on now "
+        },
+        {
+          "id": "612",
+          "prediction": "Your sex is on fire!!! ((Kings of Leon)) love listening to this song ",
+          "reference": "Enjoying the cool weather as I walk to my Anthro class  I love the cali weather..."
+        },
+        {
+          "id": "613",
+          "prediction": "Hey @jonasbrothers How was the wiffle ball game?  #jonasliveonfb",
+          "reference": "@ItsChelseaStaub Awesome!! Can't wait to watch it!! Except I live in Australia so we won't be able to see it until next month! "
+        },
+        {
+          "id": "614",
+          "prediction": "@lorenfogelman Oh p.s. I have many unteachable moments  Just keep workin on them-That's my plan ",
+          "reference": "@Uheard Yes, I have noticed some stores have generics on laundry, dishwasher soaps &amp; fabric softners - Now I'm in love w/my clothesline "
+        }
+      ]
+    },
+    "Input Copy": {
+      "tier": "Tier 1",
+      "scores": {
+        "rouge1": 0.36125789720359497,
+        "rougeL": 0.3208114542913978,
+        "n_samples": 100,
+        "time_seconds": 0.0
+      },
+      "sample_predictions": [
+        {
+          "id": "610",
+          "prediction": "Although I have a lot to do today, I am",
+          "reference": "got a busy day today.. but i'm bored right now "
+        },
+        {
+          "id": "611",
+          "prediction": "I wish Torchwood Children of Earth was currently airing.",
+          "reference": "I really wish Torchwood Children of Earth was on now "
+        },
+        {
+          "id": "612",
+          "prediction": "I'm walking to my Anthro class and enjoying the cool weather.",
+          "reference": "Enjoying the cool weather as I walk to my Anthro class  I love the cali weather..."
+        },
+        {
+          "id": "613",
+          "prediction": "@ItsChelseaStaub Great!!",
+          "reference": "@ItsChelseaStaub Awesome!! Can't wait to watch it!! Except I live in Australia so we won't be able to see it until next month! "
+        },
+        {
+          "id": "614",
+          "prediction": "@Uheard observed that certain stores offer generic options for laundry, dishwasher soaps, and fabric softeners.",
+          "reference": "@Uheard Yes, I have noticed some stores have generics on laundry, dishwasher soaps &amp; fabric softners - Now I'm in love w/my clothesline "
+        }
+      ]
+    },
+    "TF-IDF Retrieval": {
+      "tier": "Tier 2",
+      "scores": {
+        "rouge1": 0.1491356991269246,
+        "rougeL": 0.11908781851928556,
+        "n_samples": 100,
+        "time_seconds": 0.1
+      },
+      "sample_predictions": [
+        {
+          "id": "610",
+          "prediction": "is feeling even worse..  cold, cough, sore throat.. the works ",
+          "reference": "got a busy day today.. but i'm bored right now "
+        },
+        {
+          "id": "611",
+          "prediction": "@FantasyDreamer Nope. The only bit I supplied for BLOOD NOIR is on the book jacket  I am ANTI-Spoilers *L*",
+          "reference": "I really wish Torchwood Children of Earth was on now "
+        },
+        {
+          "id": "612",
+          "prediction": "Your sex is on fire!!! ((Kings of Leon)) love listening to this song ",
+          "reference": "Enjoying the cool weather as I walk to my Anthro class  I love the cali weather..."
+        },
+        {
+          "id": "613",
+          "prediction": "Hey @jonasbrothers Can you give a shout out to Nicole from Perth, Australia!  #jonasliveonfb",
+          "reference": "@ItsChelseaStaub Awesome!! Can't wait to watch it!! Except I live in Australia so we won't be able to see it until next month! "
+        },
+        {
+          "id": "614",
+          "prediction": "Earth day thought-plan to buy eco friendly laundry, dish soaps &amp; fab softeners - Change the world - one day at a time ",
+          "reference": "@Uheard Yes, I have noticed some stores have generics on laundry, dishwasher soaps &amp; fabric softners - Now I'm in love w/my clothesline "
+        }
+      ]
+    },
+    "BM25 Retrieval": {
+      "tier": "Tier 2",
+      "scores": {
+        "rouge1": 0.14937442591737551,
+        "rougeL": 0.1196315850975349,
+        "n_samples": 100,
+        "time_seconds": 0.1
+      },
+      "sample_predictions": [
+        {
+          "id": "610",
+          "prediction": "is feeling even worse..  cold, cough, sore throat.. the works ",
+          "reference": "got a busy day today.. but i'm bored right now "
+        },
+        {
+          "id": "611",
+          "prediction": "@FantasyDreamer Nope. The only bit I supplied for BLOOD NOIR is on the book jacket  I am ANTI-Spoilers *L*",
+          "reference": "I really wish Torchwood Children of Earth was on now "
+        },
+        {
+          "id": "612",
+          "prediction": "Your sex is on fire!!! ((Kings of Leon)) love listening to this song ",
+          "reference": "Enjoying the cool weather as I walk to my Anthro class  I love the cali weather..."
+        },
+        {
+          "id": "613",
+          "prediction": "Hey @jonasbrothers Can you give a shout out to Nicole from Perth, Australia!  #jonasliveonfb",
+          "reference": "@ItsChelseaStaub Awesome!! Can't wait to watch it!! Except I live in Australia so we won't be able to see it until next month! "
+        },
+        {
+          "id": "614",
+          "prediction": "Earth day thought-plan to buy eco friendly laundry, dish soaps &amp; fab softeners - Change the world - one day at a time ",
+          "reference": "@Uheard Yes, I have noticed some stores have generics on laundry, dishwasher soaps &amp; fabric softners - Now I'm in love w/my clothesline "
+        }
+      ]
+    }
+  }
+}

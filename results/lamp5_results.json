@@ -1,0 +1,187 @@
+{
+  "experiment": "lamp5_evaluation",
+  "task": "lamp5",
+  "n_samples": 100,
+  "results": {
+    "Random (profile)": {
+      "tier": "Tier 1",
+      "scores": {
+        "rouge1": 0.10878019325041131,
+        "rougeL": 0.10032886886100643,
+        "n_samples": 100,
+        "time_seconds": 0.0
+      },
+      "sample_predictions": [
+        {
+          "id": "410",
+          "prediction": "Query spelling correction using multi-task learning",
+          "reference": "On Approximating Frequency Moments of Data Streams with Skewed Projections"
+        },
+        {
+          "id": "411",
+          "prediction": "A cognitive model of motor planning for virtual creatures",
+          "reference": "Unveiling the Cognitive Mechanisms of Eyes: The Visual Sensor Vs. the Perceptive Browser of the Brain"
+        },
+        {
+          "id": "412",
+          "prediction": "Facilitating Magnetic Recording Technology Scaling for Data Center Hard Disk Drives through Filesystem-Level Transparent Local Erasure Coding.",
+          "reference": "Joint (3,k)-regular LDPC code and decoder/encoder design"
+        },
+        {
+          "id": "413",
+          "prediction": "A New Algorithm for a Field Splitting Problem in Intensity-Modulated Radiation Therapy",
+          "reference": "Optimizing the sum of linear fractional functions and applications"
+        },
+        {
+          "id": "414",
+          "prediction": "Mitigating the Latency-Accuracy Trade-off in Mobile Data Analytics Systems.",
+          "reference": "Throughput and energy efficiency in topology-controlled multi-hop wireless sensor networks"
+        }
+      ]
+    },
+    "Most Recent": {
+      "tier": "Tier 1",
+      "scores": {
+        "rouge1": 0.08449710965197658,
+        "rougeL": 0.07799999401678046,
+        "n_samples": 100,
+        "time_seconds": 0.0
+      },
+      "sample_predictions": [
+        {
+          "id": "410",
+          "prediction": "Adaptive fuzzy logic controller for vehicle active suspensions with interval type-2 fuzzy membership functions",
+          "reference": "On Approximating Frequency Moments of Data Streams with Skewed Projections"
+        },
+        {
+          "id": "411",
+          "prediction": "Big Data Analytics: A Cognitive Perspectives.",
+          "reference": "Unveiling the Cognitive Mechanisms of Eyes: The Visual Sensor Vs. the Perceptive Browser of the Brain"
+        },
+        {
+          "id": "412",
+          "prediction": "Quasi-nonvolatile SSD: Trading flash memory nonvolatility to improve storage system performance for enterprise applications",
+          "reference": "Joint (3,k)-regular LDPC code and decoder/encoder design"
+        },
+        {
+          "id": "413",
+          "prediction": "Parallel algorithms for maximum matching in interval graphs",
+          "reference": "Optimizing the sum of linear fractional functions and applications"
+        },
+        {
+          "id": "414",
+          "prediction": "Fast and Accurate Performance Analysis of LTE Radio Access Networks.",
+          "reference": "Throughput and energy efficiency in topology-controlled multi-hop wireless sensor networks"
+        }
+      ]
+    },
+    "Input Copy": {
+      "tier": "Tier 1",
+      "scores": {
+        "rouge1": 0.26239521138697197,
+        "rougeL": 0.22901716687069265,
+        "n_samples": 100,
+        "time_seconds": 0.0
+      },
+      "sample_predictions": [
+        {
+          "id": "410",
+          "prediction": "We propose skewed stable random projectionsfor approximating the \u03b1th frequency moments of dynamic data streams",
+          "reference": "On Approximating Frequency Moments of Data Streams with Skewed Projections"
+        },
+        {
+          "id": "411",
+          "prediction": "Eyes as the unique organ possess intensively direct connections to the brain and dynamically perceptual",
+          "reference": "Unveiling the Cognitive Mechanisms of Eyes: The Visual Sensor Vs. the Perceptive Browser of the Brain"
+        },
+        {
+          "id": "412",
+          "prediction": "In the past few years, Gallager's Low-Density Parity-Check (LDPC) codes have received a lot of",
+          "reference": "Joint (3,k)-regular LDPC code and decoder/encoder design"
+        },
+        {
+          "id": "413",
+          "prediction": "The problem of optimizing the sum of m linear fractional functions (SOLF) in a fixed",
+          "reference": "Optimizing the sum of linear fractional functions and applications"
+        },
+        {
+          "id": "414",
+          "prediction": "In the context of multi-hop wireless networks, various topology control algorithms have been proposed to",
+          "reference": "Throughput and energy efficiency in topology-controlled multi-hop wireless sensor networks"
+        }
+      ]
+    },
+    "TF-IDF Retrieval": {
+      "tier": "Tier 2",
+      "scores": {
+        "rouge1": 0.35697807861589737,
+        "rougeL": 0.31738720632610085,
+        "n_samples": 100,
+        "time_seconds": 0.71
+      },
+      "sample_predictions": [
+        {
+          "id": "410",
+          "prediction": "Very Sparse Stable Random Projections, Estimators and Tail Bounds for Stable Random Projections",
+          "reference": "On Approximating Frequency Moments of Data Streams with Skewed Projections"
+        },
+        {
+          "id": "411",
+          "prediction": "On cognitive mechanism of the eyes: the sensor vs. the browser of the brain",
+          "reference": "Unveiling the Cognitive Mechanisms of Eyes: The Visual Sensor Vs. the Perceptive Browser of the Brain"
+        },
+        {
+          "id": "412",
+          "prediction": "Joint code-encoder-decoder design for LDPC coding system VLSI implementation",
+          "reference": "Joint (3,k)-regular LDPC code and decoder/encoder design"
+        },
+        {
+          "id": "413",
+          "prediction": "Efficient Algorithms and Implementations for Optimizing the Sum of Linear Fractional Functions, with Applications",
+          "reference": "Optimizing the sum of linear fractional functions and applications"
+        },
+        {
+          "id": "414",
+          "prediction": "Contour maps: monitoring and diagnosis in sensor networks",
+          "reference": "Throughput and energy efficiency in topology-controlled multi-hop wireless sensor networks"
+        }
+      ]
+    },
+    "BM25 Retrieval": {
+      "tier": "Tier 2",
+      "scores": {
+        "rouge1": 0.36907914048284296,
+        "rougeL": 0.3258314069383591,
+        "n_samples": 100,
+        "time_seconds": 0.72
+      },
+      "sample_predictions": [
+        {
+          "id": "410",
+          "prediction": "On the Sample Complexity of Compressed Counting",
+          "reference": "On Approximating Frequency Moments of Data Streams with Skewed Projections"
+        },
+        {
+          "id": "411",
+          "prediction": "On cognitive mechanism of the eyes: the sensor vs. the browser of the brain",
+          "reference": "Unveiling the Cognitive Mechanisms of Eyes: The Visual Sensor Vs. the Perceptive Browser of the Brain"
+        },
+        {
+          "id": "412",
+          "prediction": "Joint code-encoder-decoder design for LDPC coding system VLSI implementation",
+          "reference": "Joint (3,k)-regular LDPC code and decoder/encoder design"
+        },
+        {
+          "id": "413",
+          "prediction": "Efficient Algorithms and Implementations for Optimizing the Sum of Linear Fractional Functions, with Applications",
+          "reference": "Optimizing the sum of linear fractional functions and applications"
+        },
+        {
+          "id": "414",
+          "prediction": "The Power Balancing Problem In Energy Constrained Multi-Hop Wireless Networks",
+          "reference": "Throughput and energy efficiency in topology-controlled multi-hop wireless sensor networks"
+        }
+      ]
+    }
+  }
+}
