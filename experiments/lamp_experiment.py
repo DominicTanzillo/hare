@@ -42,6 +42,7 @@ def run_experiment(
     skip_neural: bool = False,
     output_path: Path | None = None,
     seed: int = 42,
+    checkpoint: str | None = None,
 ) -> dict:
     """Run LaMP-4 evaluation across all baselines.
 
@@ -70,7 +71,7 @@ def run_experiment(
     print(f"  {len(data)} samples loaded\n")
 
     # Get baselines
-    baselines = get_all_baselines(include_neural=not skip_neural)
+    baselines = get_all_baselines(include_neural=not skip_neural, checkpoint=checkpoint)
 
     # Run evaluation
     all_results = {}
@@ -176,6 +177,10 @@ def main():
         "--output", type=Path, default=Path("results/lamp4_results.json"),
         help="Output path for results JSON."
     )
+    parser.add_argument(
+        "--checkpoint", type=str, default=None,
+        help="Path to fine-tuned model checkpoint for neural baselines."
+    )
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
 
@@ -184,6 +189,7 @@ def main():
         skip_neural=args.skip_neural,
         output_path=args.output,
         seed=args.seed,
+        checkpoint=args.checkpoint,
     )
 
 

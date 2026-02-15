@@ -177,9 +177,15 @@ class VanillaGPT2:
     """
     name = "Vanilla GPT-2"
 
-    def __init__(self, model_name: str = "distilgpt2", max_new_tokens: int = 32) -> None:
+    def __init__(
+        self,
+        model_name: str = "distilgpt2",
+        max_new_tokens: int = 32,
+        checkpoint: str | None = None,
+    ) -> None:
         self.model_name = model_name
         self.max_new_tokens = max_new_tokens
+        self.checkpoint = checkpoint
         self._model = None
         self._tokenizer = None
 
@@ -187,8 +193,9 @@ class VanillaGPT2:
         if self._model is not None:
             return
         from transformers import AutoModelForCausalLM, AutoTokenizer
-        self._tokenizer = AutoTokenizer.from_pretrained(self.model_name)
-        self._model = AutoModelForCausalLM.from_pretrained(self.model_name)
+        load_from = self.checkpoint or self.model_name
+        self._tokenizer = AutoTokenizer.from_pretrained(load_from)
+        self._model = AutoModelForCausalLM.from_pretrained(load_from)
         if self._tokenizer.pad_token is None:
             self._tokenizer.pad_token = self._tokenizer.eos_token
         self._model.eval()
@@ -237,10 +244,12 @@ class RAGGPT2:
         model_name: str = "distilgpt2",
         max_new_tokens: int = 32,
         top_k: int = 3,
+        checkpoint: str | None = None,
     ) -> None:
         self.model_name = model_name
         self.max_new_tokens = max_new_tokens
         self.top_k = top_k
+        self.checkpoint = checkpoint
         self._model = None
         self._tokenizer = None
 
@@ -248,8 +257,9 @@ class RAGGPT2:
         if self._model is not None:
             return
         from transformers import AutoModelForCausalLM, AutoTokenizer
-        self._tokenizer = AutoTokenizer.from_pretrained(self.model_name)
-        self._model = AutoModelForCausalLM.from_pretrained(self.model_name)
+        load_from = self.checkpoint or self.model_name
+        self._tokenizer = AutoTokenizer.from_pretrained(load_from)
+        self._model = AutoModelForCausalLM.from_pretrained(load_from)
         if self._tokenizer.pad_token is None:
             self._tokenizer.pad_token = self._tokenizer.eos_token
         self._model.eval()
@@ -335,11 +345,13 @@ class HareGPT2:
         max_new_tokens: int = 32,
         top_k: int = 3,
         n_warmup: int = 5,
+        checkpoint: str | None = None,
     ) -> None:
         self.model_name = model_name
         self.max_new_tokens = max_new_tokens
         self.top_k = top_k
         self.n_warmup = n_warmup
+        self.checkpoint = checkpoint
         self._model = None
         self._tokenizer = None
         self._embedder = None
@@ -348,8 +360,9 @@ class HareGPT2:
         if self._model is not None:
             return
         from transformers import AutoModelForCausalLM, AutoTokenizer
-        self._tokenizer = AutoTokenizer.from_pretrained(self.model_name)
-        self._model = AutoModelForCausalLM.from_pretrained(self.model_name)
+        load_from = self.checkpoint or self.model_name
+        self._tokenizer = AutoTokenizer.from_pretrained(load_from)
+        self._model = AutoModelForCausalLM.from_pretrained(load_from)
         if self._tokenizer.pad_token is None:
             self._tokenizer.pad_token = self._tokenizer.eos_token
         self._model.eval()
@@ -457,13 +470,19 @@ class HareGPT2:
 # Convenience: run all baselines
 # =============================================================================
 
-def get_all_baselines(include_neural: bool = True) -> list:
+def get_all_baselines(
+    include_neural: bool = True,
+    checkpoint: str | None = None,
+) -> list:
     """Get instances of all baselines.
 
     Parameters
     ----------
     include_neural : bool
         If False, skip neural baselines (faster, no GPU needed).
+    checkpoint : str or None
+        Path to a fine-tuned model checkpoint. If provided, all neural
+        baselines use this checkpoint instead of the pretrained model.
 
     Returns
     -------
@@ -481,8 +500,8 @@ def get_all_baselines(include_neural: bool = True) -> list:
     if include_neural:
         baselines.extend([
             # Tier 3: Neural
-            VanillaGPT2(),
-            RAGGPT2(),
-            HareGPT2(),
+            VanillaGPT2(checkpoint=checkpoint),
+            RAGGPT2(checkpoint=checkpoint),
+            HareGPT2(checkpoint=checkpoint),
         ])
     return baselines
