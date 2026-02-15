@@ -265,8 +265,11 @@ class HARE:
             if isinstance(synthesis, dict):
                 synthesis = synthesis["synthesis"]
 
-        # Update user state with the synthesized feature as the observation
-        user.update(synthesis, reward)
+        # Update user state with the QUERY embedding, not the synthesis.
+        # The query directly encodes what the user asked about (their interests),
+        # while the synthesis is the system's output (circular with random projections).
+        # This makes u_t represent "what topics this user cares about."
+        user.update(query_embedding, reward)
 
         # Update attention uncertainty trackers
         joint_query = np.concatenate([query_embedding.ravel(), user.u])
