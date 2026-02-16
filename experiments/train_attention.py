@@ -84,6 +84,23 @@ def compute_oracle_relevance(
     return p_oracle
 
 
+def _load_training_data(task: str, max_samples: int | None = None, seed: int = 42):
+    """Load training data from LaMP or Amazon sources."""
+    if task.lower().startswith("amazon"):
+        from hare.evaluation.amazon import load_amazon_reviews, amazon_to_lamp_format
+        category = task.split("_", 1)[1] if "_" in task else "Digital_Music"
+        amazon_data = load_amazon_reviews(
+            category=category,
+            min_reviews_per_user=5,
+            max_samples=max_samples,
+            seed=seed,
+        )
+        return amazon_to_lamp_format(amazon_data), "amazon"
+    else:
+        data = load_lamp(task, split="train", max_samples=max_samples)
+        return data, task
+
+
 def train_attention(
     task: str = "lamp4",
     epochs: int = 10,
@@ -102,7 +119,7 @@ def train_attention(
     checkpoint_dir: Path = Path("checkpoints"),
     resume: str | None = None,
 ) -> Path:
-    """Train learnable cross-attention on LaMP data.
+    """Train learnable cross-attention on LaMP or Amazon data.
 
     Returns path to saved checkpoint.
     """
@@ -110,9 +127,9 @@ def train_attention(
     print(f"Training HARE Learnable Attention on {task.upper()}")
     print("=" * 70)
 
-    # Load data
-    print(f"\nLoading {task} training set...")
-    data = load_lamp(task, split="train", max_samples=max_samples)
+    # Load data (supports LaMP and Amazon)
+    print(f"\nLoading {task} training data...")
+    data, task_key = _load_training_data(task, max_samples, seed)
     print(f"  {len(data)} samples loaded")
 
     # Build TF-IDF embedder from all profile texts
@@ -168,7 +185,7 @@ def train_attention(
 
             # Get profile texts and targets
             from hare.evaluation.baselines import get_task_config, _get_profile_target
-            cfg = get_task_config(task)
+            cfg = get_task_config(task_key)
             profile_texts = [
                 item.get(cfg.profile_text_key, "") for item in profile
             ]
@@ -294,12 +311,12 @@ def train_attention(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Train HARE learnable cross-attention on LaMP data"
+        description="Train HARE learnable cross-attention on LaMP or Amazon data"
     )
     parser.add_argument(
         "--task", type=str, default="lamp4",
-        choices=["lamp4", "lamp5", "lamp7"],
-        help="LaMP task to train on (default: lamp4).",
+        help="Task to train on: lamp4, lamp5, lamp7, or amazon_<Category> "
+             "(e.g. amazon_Digital_Music). Default: lamp4.",
     )
     parser.add_argument("--epochs", type=int, default=10)
     parser.add_argument("--lr", type=float, default=1e-3)

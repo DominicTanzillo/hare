@@ -118,7 +118,7 @@
         "rouge1": 0.22777152170523532,
         "rougeL": 0.1563382394885827,
         "n_samples": 100,
-        "time_seconds": 0.14
+        "time_seconds": 0.15
       },
       "sample_predictions": [
         {
@@ -154,7 +154,7 @@
         "rouge1": 0.22773789086554636,
         "rougeL": 0.15684834957805818,
         "n_samples": 100,
-        "time_seconds": 0.14
+        "time_seconds": 0.15
       },
       "sample_predictions": [
         {
@@ -180,6 +180,114 @@
         {
           "id": "AF3OXXJBTKMLTQAXUWNESUNU3SDQ_B008VTXSYC",
           "prediction": "I'm barely halfway through the first disc, and I'm EXTREMELY pleased with this purchase!<br />(I bought it used though... I can't spend almost seven grand for a new set. \u263a )<br /><br />I knew George s",
+          "reference": "With so many songs, I haven't listened to them all yet, but the selection is amazing!  A lot of gems in this set!<br />Glad I got the extended 18-disc set!!!"
+        }
+      ]
+    },
+    "Vanilla GPT-2": {
+      "tier": "Tier 3",
+      "scores": {
+        "rouge1": 0.051406841751339166,
+        "rougeL": 0.04272134521690668,
+        "n_samples": 100,
+        "time_seconds": 34.88
+      },
+      "sample_predictions": [
+        {
+          "id": "AGX5CFBYWX6MFVMIYXKUMOFZSTFA_B014I30MGQ",
+          "prediction": "(2003-07-14)",
+          "reference": "Prior to this Review: there was only one previous Amazon Customer Review on this Excellent CD so I'll tell you a little bit about it......I bought this CD from Amazon under our former Amazon Customer "
+        },
+        {
+          "id": "AFNCZCYPCUY4I2HSBF4ZJVVY2RYA_B00IGECE2E",
+          "prediction": "The Black Sabbath- The Collection- Parts 1 & 2 {2 Audio Cassettes}",
+          "reference": "OLD SABBATH ON CASSETTE..ONE ARRIVED YESTERDAY..TODAY THE OTHER..ITS 2 VOL SET..LITTLE PRICEY..IM A COLLECTER OF BLACK SABBATH"
+        },
+        {
+          "id": "AGSPHKLFX7OX3VNKHLMV23KZIYJA_B01L8PW9SQ",
+          "prediction": "Classic Rock Songs of Rock and Roll - Classic Rock Songs from Your Favorite Artists",
+          "reference": "A fantastic collection of pop music covering the period just before the Beatles and the British Invasion, Motown and all the great SOUL MUSIC shook things up.I loved the girl groups from that period W"
+        },
+        {
+          "id": "AENQZB2PFLM3HDPDZ7NSUKSUZS2Q_B00WQXBPB2",
+          "prediction": "Rock Bottom (CD)",
+          "reference": "From someone's collection off vinyl, good songs subject to lo-fi transcription. Click of rotation sometimes audible too. Phasing was reversed sometimes which hurt my head to hear as was raised on the "
+        },
+        {
+          "id": "AF3OXXJBTKMLTQAXUWNESUNU3SDQ_B008VTXSYC",
+          "prediction": "This is the first time in the past year that I have been able to buy a rare copy of a rare book by a friend who I don't",
+          "reference": "With so many songs, I haven't listened to them all yet, but the selection is amazing!  A lot of gems in this set!<br />Glad I got the extended 18-disc set!!!"
+        }
+      ]
+    },
+    "RAG + GPT-2": {
+      "tier": "Tier 3",
+      "scores": {
+        "rouge1": 0.1456469455814539,
+        "rougeL": 0.12970698665582753,
+        "n_samples": 100,
+        "time_seconds": 37.63
+      },
+      "sample_predictions": [
+        {
+          "id": "AGX5CFBYWX6MFVMIYXKUMOFZSTFA_B014I30MGQ",
+          "prediction": "classic hit \"You Gave Me A Mountain\" and I am amazed at how many of these were out of print. My wife and I have been to all",
+          "reference": "Prior to this Review: there was only one previous Amazon Customer Review on this Excellent CD so I'll tell you a little bit about it......I bought this CD from Amazon under our former Amazon Customer "
+        },
+        {
+          "id": "AFNCZCYPCUY4I2HSBF4ZJVVY2RYA_B00IGECE2E",
+          "prediction": "I have no idea what the band is about. I know they are very good. The band is a band with a lot of cool stuff. The band is",
+          "reference": "OLD SABBATH ON CASSETTE..ONE ARRIVED YESTERDAY..TODAY THE OTHER..ITS 2 VOL SET..LITTLE PRICEY..IM A COLLECTER OF BLACK SABBATH"
+        },
+        {
+          "id": "AGSPHKLFX7OX3VNKHLMV23KZIYJA_B01L8PW9SQ",
+          "prediction": "Classic Rock Songs from Your Favorite Artists",
+          "reference": "A fantastic collection of pop music covering the period just before the Beatles and the British Invasion, Motown and all the great SOUL MUSIC shook things up.I loved the girl groups from that period W"
+        },
+        {
+          "id": "AENQZB2PFLM3HDPDZ7NSUKSUZS2Q_B00WQXBPB2",
+          "prediction": "A great track that has just been released.",
+          "reference": "From someone's collection off vinyl, good songs subject to lo-fi transcription. Click of rotation sometimes audible too. Phasing was reversed sometimes which hurt my head to hear as was raised on the "
+        },
+        {
+          "id": "AF3OXXJBTKMLTQAXUWNESUNU3SDQ_B008VTXSYC",
+          "prediction": "in a different song, and not a lot of original music.",
+          "reference": "With so many songs, I haven't listened to them all yet, but the selection is amazing!  A lot of gems in this set!<br />Glad I got the extended 18-disc set!!!"
+        }
+      ]
+    },
+    "HARE + GPT-2": {
+      "tier": "Tier 3",
+      "scores": {
+        "rouge1": 0.1602276003856643,
+        "rougeL": 0.1362925628236276,
+        "n_samples": 100,
+        "time_seconds": 99.2
+      },
+      "sample_predictions": [
+        {
+          "id": "AGX5CFBYWX6MFVMIYXKUMOFZSTFA_B014I30MGQ",
+          "prediction": "first solo album, \"The Last Time Around.\" I have a great feeling that he has finally taken a break from his life. I am very proud of his",
+          "reference": "Prior to this Review: there was only one previous Amazon Customer Review on this Excellent CD so I'll tell you a little bit about it......I bought this CD from Amazon under our former Amazon Customer "
+        },
+        {
+          "id": "AFNCZCYPCUY4I2HSBF4ZJVVY2RYA_B00IGECE2E",
+          "prediction": "BLACK Sabbath- The Collection- Parts 1 & 2 {2 Audio Cassettes}",
+          "reference": "OLD SABBATH ON CASSETTE..ONE ARRIVED YESTERDAY..TODAY THE OTHER..ITS 2 VOL SET..LITTLE PRICEY..IM A COLLECTER OF BLACK SABBATH"
+        },
+        {
+          "id": "AGSPHKLFX7OX3VNKHLMV23KZIYJA_B01L8PW9SQ",
+          "prediction": "Classic Rock Songs from Your Favorite Artists",
+          "reference": "A fantastic collection of pop music covering the period just before the Beatles and the British Invasion, Motown and all the great SOUL MUSIC shook things up.I loved the girl groups from that period W"
+        },
+        {
+          "id": "AENQZB2PFLM3HDPDZ7NSUKSUZS2Q_B00WQXBPB2",
+          "prediction": "Excellent sound, even disc 1 which has processing expected of 1950s Sun Records operating on a shoestring. The repetition of Ooby Dooby, Paper Boy",
+          "reference": "From someone's collection off vinyl, good songs subject to lo-fi transcription. Click of rotation sometimes audible too. Phasing was reversed sometimes which hurt my head to hear as was raised on the "
+        },
+        {
+          "id": "AF3OXXJBTKMLTQAXUWNESUNU3SDQ_B008VTXSYC",
+          "prediction": "them.<br /><br />If you liked &#34;Love Hina&#34;, you'll love &#34;I Love",
           "reference": "With so many songs, I haven't listened to them all yet, but the selection is amazing!  A lot of gems in this set!<br />Glad I got the extended 18-disc set!!!"
         }
       ]

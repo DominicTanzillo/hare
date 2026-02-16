@@ -243,7 +243,7 @@ def run_divergence_experiment(
             seed=42,
         )
         if attention_checkpoint:
-            state = torch.load(attention_checkpoint, weights_only=True)
+            state = torch.load(attention_checkpoint, weights_only=False)
             hare.attention.load_state_dict(
                 state["attention_state_dict"], strict=False
             )

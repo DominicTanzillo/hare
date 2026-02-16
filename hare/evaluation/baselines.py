@@ -461,29 +461,50 @@ class HareGPT2:
             self._embedder = TfidfEmbedder(max_features=2000, output_dim=64)
         return self._embedder
 
-    def _build_learnable_hare(self, d: int, n_profile: int, profile_embs):
-        """Build LearnableHARE with trained attention weights."""
+    def _build_learnable_hare(self, profile_embs):
+        """Build LearnableHARE with trained attention weights.
+
+        Reads d_knowledge from the checkpoint config so weight shapes always
+        match.  If the per-sample embeddings have fewer dimensions (small
+        profiles → fewer SVD components), they are zero-padded to match.
+
+        Returns
+        -------
+        hare : LearnableHARE
+        profile_embs : ndarray (possibly padded)
+        ckpt_d : int  — checkpoint's d_knowledge (callers pad query_emb too)
+        """
         import torch as _torch
         from hare.bandits.learnable_hare import LearnableHARE
 
-        checkpoint = _torch.load(self.attention_checkpoint, weights_only=True)
+        checkpoint = _torch.load(self.attention_checkpoint, weights_only=False)
         cfg = checkpoint.get("config", {})
 
+        actual_d = profile_embs.shape[1]
+        ckpt_d = cfg.get("d_knowledge", actual_d)
+        n_profile = profile_embs.shape[0]
+
+        # Zero-pad embeddings when the per-sample SVD produced fewer dims
+        if actual_d < ckpt_d:
+            profile_embs = np.pad(
+                profile_embs, ((0, 0), (0, ckpt_d - actual_d)), mode="constant"
+            )
+
         hare = LearnableHARE(
-            d_knowledge=d,
-            d_user=cfg.get("d_user", min(32, d)),
+            d_knowledge=ckpt_d,
+            d_user=cfg.get("d_user", min(32, ckpt_d)),
             n_clusters=min(cfg.get("n_clusters", 3), n_profile),
             n_heads=cfg.get("n_heads", 2),
-            d_k=cfg.get("d_k", min(32, d)),
-            d_v=cfg.get("d_v", min(32, d)),
+            d_k=cfg.get("d_k", min(32, ckpt_d)),
+            d_v=cfg.get("d_v", min(32, ckpt_d)),
             alpha=cfg.get("alpha", 1.5),
             seed=42,
         )
-        # Load trained attention weights (matching keys only)
+        # Load trained attention weights
         state_dict = checkpoint["attention_state_dict"]
         hare.attention.load_state_dict(state_dict, strict=False)
         hare.set_knowledge_pool(profile_embs)
-        return hare
+        return hare, profile_embs, ckpt_d
 
     def predict(self, input_text: str, profile: list[dict]) -> str:
         import torch
@@ -518,7 +539,11 @@ class HareGPT2:
 
         # Initialize HARE for this user's profile
         if self.attention_checkpoint:
-            hare = self._build_learnable_hare(d, len(profile), profile_embs)
+            hare, profile_embs, ckpt_d = self._build_learnable_hare(profile_embs)
+            # Pad query embedding to match checkpoint dimension
+            if d < ckpt_d:
+                query_emb = np.pad(query_emb, (0, ckpt_d - d))
+                d = ckpt_d
         else:
             hare = HARE(
                 d_knowledge=d,
