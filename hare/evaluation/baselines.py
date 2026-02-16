@@ -88,6 +88,36 @@ TASK_CONFIGS: dict[str, TaskConfig] = {
         max_input_chars=300,
         max_example_chars=300,
     ),
+    "longlampabstract": TaskConfig(
+        task_name="LongLaMP-abstract",
+        instruction_prefix=r'^Generate an abstract for the title\s*"[^"]*"\s*using the following items:\s*',
+        content_label="Title",
+        target_label="Abstract",
+        profile_text_key="text",
+        profile_target_key="text",
+        max_input_chars=500,
+        max_example_chars=500,
+    ),
+    "longlampreview": TaskConfig(
+        task_name="LongLaMP-review",
+        instruction_prefix=r"^Generate a \d+\.\d+-star review for\s*",
+        content_label="Product",
+        target_label="Review",
+        profile_text_key="text",
+        profile_target_key="text",
+        max_input_chars=400,
+        max_example_chars=400,
+    ),
+    "pens": TaskConfig(
+        task_name="PENS",
+        instruction_prefix=r"^Generate a headline for the following article:\s*",
+        content_label="Article",
+        target_label="Headline",
+        profile_text_key="text",
+        profile_target_key="title",
+        max_input_chars=500,
+        max_example_chars=200,
+    ),
 }
 
 
