@@ -85,7 +85,7 @@ def compute_oracle_relevance(
 
 
 def _load_training_data(task: str, max_samples: int | None = None, seed: int = 42):
-    """Load training data from LaMP or Amazon sources."""
+    """Load training data from LaMP, Amazon, or LongLaMP sources."""
     if task.lower().startswith("amazon"):
         from hare.evaluation.amazon import load_amazon_reviews, amazon_to_lamp_format
         category = task.split("_", 1)[1] if "_" in task else "Digital_Music"
@@ -96,6 +96,12 @@ def _load_training_data(task: str, max_samples: int | None = None, seed: int = 4
             seed=seed,
         )
         return amazon_to_lamp_format(amazon_data), "amazon"
+    elif task.lower().startswith("longlamp"):
+        from hare.evaluation.longlamp import load_longlamp
+        # e.g. "longlamp_abstract" or "longlamp_review"
+        longlamp_task = task.split("_", 1)[1] if "_" in task else "abstract"
+        data = load_longlamp(longlamp_task, split="train", max_samples=max_samples)
+        return data, f"longlamp{longlamp_task}"
     else:
         data = load_lamp(task, split="train", max_samples=max_samples)
         return data, task
