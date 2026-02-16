@@ -50,6 +50,7 @@ def run_experiment(
     output_path: Path | None = None,
     seed: int = 42,
     checkpoint: str | None = None,
+    attention_checkpoint: str | None = None,
 ) -> dict:
     """Run LaMP evaluation across all baselines.
 
@@ -67,6 +68,8 @@ def run_experiment(
         Random seed for reproducibility.
     checkpoint : str or None
         Path to fine-tuned model checkpoint.
+    attention_checkpoint : str or None
+        Path to trained HARE attention weights checkpoint.
 
     Returns
     -------
@@ -88,6 +91,7 @@ def run_experiment(
         include_neural=not skip_neural,
         checkpoint=checkpoint,
         task=task_key,
+        attention_checkpoint=attention_checkpoint,
     )
 
     # Run evaluation
@@ -203,6 +207,10 @@ def main():
         "--checkpoint", type=str, default=None,
         help="Path to fine-tuned model checkpoint for neural baselines."
     )
+    parser.add_argument(
+        "--attention-checkpoint", type=str, default=None,
+        help="Path to trained HARE attention weights (enables LearnableHARE)."
+    )
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
 
@@ -217,6 +225,7 @@ def main():
             output_path=output,
             seed=args.seed,
             checkpoint=args.checkpoint,
+            attention_checkpoint=args.attention_checkpoint,
         )
 
 

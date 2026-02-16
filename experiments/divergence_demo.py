@@ -22,6 +22,7 @@ Usage:
     python experiments/divergence_demo.py
     python experiments/divergence_demo.py --backend tfidf
     python experiments/divergence_demo.py --output results/divergence.json
+    python experiments/divergence_demo.py --learnable --attention-checkpoint checkpoints/attention_weights.pt
 """
 
 from __future__ import annotations
@@ -178,8 +179,21 @@ USER_PROFILES = {
 SHARED_QUERY = "I need help writing tests"
 
 
-def run_divergence_experiment(backend: str = "tfidf") -> dict:
+def run_divergence_experiment(
+    backend: str = "tfidf",
+    learnable: bool = False,
+    attention_checkpoint: str | None = None,
+) -> dict:
     """Run the 5-user divergence experiment.
+
+    Parameters
+    ----------
+    backend : str
+        Embedding backend ("tfidf" or "st").
+    learnable : bool
+        If True, use LearnableHARE with trained attention projections.
+    attention_checkpoint : str or None
+        Path to trained attention weights. Required if learnable=True.
 
     Returns a results dict suitable for JSON serialization and paper figures.
     """
@@ -207,22 +221,46 @@ def run_divergence_experiment(backend: str = "tfidf") -> dict:
     d_knowledge = skill_embeddings.shape[1]
     d_user = min(64, d_knowledge)
 
+    mode = "LearnableHARE" if learnable else "HARE (random projections)"
     print(f"Knowledge pool: {len(skills)} skills, {d_knowledge}-dim embeddings")
     print(f"User state dim: {d_user}")
-    print(f"Embedding backend: {backend}\n")
+    print(f"Embedding backend: {backend}")
+    print(f"Mode: {mode}\n")
 
     # Initialize HARE
-    hare = HARE(
-        d_knowledge=d_knowledge,
-        d_user=d_user,
-        n_clusters=min(5, len(skills)),
-        n_heads=4,
-        d_k=min(64, d_knowledge),
-        d_v=min(64, d_knowledge),
-        alpha=2.0,
-        seed=42,
-    )
-    hare.set_knowledge_pool(skill_embeddings)
+    if learnable:
+        import torch
+        from hare.bandits.learnable_hare import LearnableHARE
+
+        hare = LearnableHARE(
+            d_knowledge=d_knowledge,
+            d_user=d_user,
+            n_clusters=min(5, len(skills)),
+            n_heads=4,
+            d_k=min(64, d_knowledge),
+            d_v=min(64, d_knowledge),
+            alpha=2.0,
+            seed=42,
+        )
+        if attention_checkpoint:
+            state = torch.load(attention_checkpoint, weights_only=True)
+            hare.attention.load_state_dict(
+                state["attention_state_dict"], strict=False
+            )
+            print(f"Loaded attention weights from {attention_checkpoint}")
+        hare.set_knowledge_pool(skill_embeddings)
+    else:
+        hare = HARE(
+            d_knowledge=d_knowledge,
+            d_user=d_user,
+            n_clusters=min(5, len(skills)),
+            n_heads=4,
+            d_k=min(64, d_knowledge),
+            d_v=min(64, d_knowledge),
+            alpha=2.0,
+            seed=42,
+        )
+        hare.set_knowledge_pool(skill_embeddings)
 
     decoder = InterpolationDecoder(top_k=3, temperature=0.3)
 
@@ -414,12 +452,24 @@ def main():
         help="Embedding backend."
     )
     parser.add_argument(
+        "--learnable", action="store_true",
+        help="Use LearnableHARE with trained attention projections."
+    )
+    parser.add_argument(
+        "--attention-checkpoint", type=str, default=None,
+        help="Path to trained attention weights (for --learnable mode)."
+    )
+    parser.add_argument(
         "--output", type=Path, default=None,
         help="Save results JSON to this path."
     )
     args = parser.parse_args()
 
-    results = run_divergence_experiment(backend=args.backend)
+    results = run_divergence_experiment(
+        backend=args.backend,
+        learnable=args.learnable,
+        attention_checkpoint=args.attention_checkpoint,
+    )
 
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)

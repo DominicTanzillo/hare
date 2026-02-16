@@ -407,6 +407,9 @@ class HareGPT2:
     Unlike RAG, the retrieval is USER-CONDITIONED: different users
     with the same query get different retrieved examples because
     their user states differ.
+
+    When attention_checkpoint is provided, uses LearnableHARE with trained
+    projection matrices instead of the random-projection HARE.
     """
     name = "HARE + GPT-2"
 
@@ -418,6 +421,7 @@ class HareGPT2:
         n_warmup: int = 5,
         checkpoint: str | None = None,
         task_config: TaskConfig | None = None,
+        attention_checkpoint: str | None = None,
     ) -> None:
         self.model_name = model_name
         self.max_new_tokens = max_new_tokens
@@ -425,6 +429,7 @@ class HareGPT2:
         self.n_warmup = n_warmup
         self.checkpoint = checkpoint
         self.task_config = task_config or TASK_CONFIGS["lamp4"]
+        self.attention_checkpoint = attention_checkpoint
         self._model = None
         self._tokenizer = None
         self._embedder = None
@@ -445,6 +450,30 @@ class HareGPT2:
             from hare.utils.embeddings import TfidfEmbedder
             self._embedder = TfidfEmbedder(max_features=2000, output_dim=64)
         return self._embedder
+
+    def _build_learnable_hare(self, d: int, n_profile: int, profile_embs):
+        """Build LearnableHARE with trained attention weights."""
+        import torch as _torch
+        from hare.bandits.learnable_hare import LearnableHARE
+
+        checkpoint = _torch.load(self.attention_checkpoint, weights_only=True)
+        cfg = checkpoint.get("config", {})
+
+        hare = LearnableHARE(
+            d_knowledge=d,
+            d_user=cfg.get("d_user", min(32, d)),
+            n_clusters=min(cfg.get("n_clusters", 3), n_profile),
+            n_heads=cfg.get("n_heads", 2),
+            d_k=cfg.get("d_k", min(32, d)),
+            d_v=cfg.get("d_v", min(32, d)),
+            alpha=cfg.get("alpha", 1.5),
+            seed=42,
+        )
+        # Load trained attention weights (matching keys only)
+        state_dict = checkpoint["attention_state_dict"]
+        hare.attention.load_state_dict(state_dict, strict=False)
+        hare.set_knowledge_pool(profile_embs)
+        return hare
 
     def predict(self, input_text: str, profile: list[dict]) -> str:
         import torch
@@ -478,17 +507,20 @@ class HareGPT2:
         d = profile_embs.shape[1]
 
         # Initialize HARE for this user's profile
-        hare = HARE(
-            d_knowledge=d,
-            d_user=min(32, d),
-            n_clusters=min(3, len(profile)),
-            n_heads=2,
-            d_k=min(32, d),
-            d_v=min(32, d),
-            alpha=1.5,
-            seed=42,
-        )
-        hare.set_knowledge_pool(profile_embs)
+        if self.attention_checkpoint:
+            hare = self._build_learnable_hare(d, len(profile), profile_embs)
+        else:
+            hare = HARE(
+                d_knowledge=d,
+                d_user=min(32, d),
+                n_clusters=min(3, len(profile)),
+                n_heads=2,
+                d_k=min(32, d),
+                d_v=min(32, d),
+                alpha=1.5,
+                seed=42,
+            )
+            hare.set_knowledge_pool(profile_embs)
 
         # Warm up user state with profile interactions
         n_warmup = min(self.n_warmup, len(profile))
@@ -547,6 +579,7 @@ def get_all_baselines(
     include_neural: bool = True,
     checkpoint: str | None = None,
     task: str = "lamp4",
+    attention_checkpoint: str | None = None,
 ) -> list:
     """Get instances of all baselines for a given LaMP task.
 
@@ -559,6 +592,9 @@ def get_all_baselines(
         baselines use this checkpoint instead of the pretrained model.
     task : str
         LaMP task name (e.g. "lamp4", "lamp5", "lamp7").
+    attention_checkpoint : str or None
+        Path to trained attention weights. If provided, HareGPT2 uses
+        LearnableHARE with these weights instead of random projections.
 
     Returns
     -------
@@ -579,6 +615,9 @@ def get_all_baselines(
             # Tier 3: Neural
             VanillaGPT2(checkpoint=checkpoint, task_config=cfg),
             RAGGPT2(checkpoint=checkpoint, task_config=cfg),
-            HareGPT2(checkpoint=checkpoint, task_config=cfg),
+            HareGPT2(
+                checkpoint=checkpoint, task_config=cfg,
+                attention_checkpoint=attention_checkpoint,
+            ),
         ])
     return baselines
