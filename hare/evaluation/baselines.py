@@ -78,6 +78,16 @@ TASK_CONFIGS: dict[str, TaskConfig] = {
         max_input_chars=280,
         max_example_chars=140,
     ),
+    "amazon": TaskConfig(
+        task_name="Amazon Reviews",
+        instruction_prefix=r"^Write a review for the following product:\s*",
+        content_label="Product",
+        target_label="Review",
+        profile_text_key="text",
+        profile_target_key="text",
+        max_input_chars=300,
+        max_example_chars=300,
+    ),
 }
 
 

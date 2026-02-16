@@ -1,0 +1,188 @@
+{
+  "experiment": "amazon_Digital_Music_evaluation",
+  "category": "Digital_Music",
+  "n_samples": 100,
+  "min_reviews_per_user": 5,
+  "results": {
+    "Random (profile)": {
+      "tier": "Tier 1",
+      "scores": {
+        "rouge1": 0.22213268849524737,
+        "rougeL": 0.15449706539829433,
+        "n_samples": 100,
+        "time_seconds": 0.0
+      },
+      "sample_predictions": [
+        {
+          "id": "AGX5CFBYWX6MFVMIYXKUMOFZSTFA_B014I30MGQ",
+          "prediction": "With no previous Amazon customer reviews on this out of print and rare CD: I wasn't sure what I was getting but it's for real! I was concerned about if the songs were original or re-recordings. They a",
+          "reference": "Prior to this Review: there was only one previous Amazon Customer Review on this Excellent CD so I'll tell you a little bit about it......I bought this CD from Amazon under our former Amazon Customer "
+        },
+        {
+          "id": "AFNCZCYPCUY4I2HSBF4ZJVVY2RYA_B00IGECE2E",
+          "prediction": "Killer CD...get it.",
+          "reference": "OLD SABBATH ON CASSETTE..ONE ARRIVED YESTERDAY..TODAY THE OTHER..ITS 2 VOL SET..LITTLE PRICEY..IM A COLLECTER OF BLACK SABBATH"
+        },
+        {
+          "id": "AGSPHKLFX7OX3VNKHLMV23KZIYJA_B01L8PW9SQ",
+          "prediction": "A nice collection of hits and fast efficient service.",
+          "reference": "A fantastic collection of pop music covering the period just before the Beatles and the British Invasion, Motown and all the great SOUL MUSIC shook things up.I loved the girl groups from that period W"
+        },
+        {
+          "id": "AENQZB2PFLM3HDPDZ7NSUKSUZS2Q_B00WQXBPB2",
+          "prediction": "Many tracks by my favorite artists that might have well been released; others deservedly left unissued.",
+          "reference": "From someone's collection off vinyl, good songs subject to lo-fi transcription. Click of rotation sometimes audible too. Phasing was reversed sometimes which hurt my head to hear as was raised on the "
+        },
+        {
+          "id": "AF3OXXJBTKMLTQAXUWNESUNU3SDQ_B008VTXSYC",
+          "prediction": "THE MISSING DISC!<br /><br />Seriously; I came across the Love Hina soundtracks a long time ago, but there were a few songs and a drama I couldn't find... and finally came across this disc!<br /><br /",
+          "reference": "With so many songs, I haven't listened to them all yet, but the selection is amazing!  A lot of gems in this set!<br />Glad I got the extended 18-disc set!!!"
+        }
+      ]
+    },
+    "Most Recent": {
+      "tier": "Tier 1",
+      "scores": {
+        "rouge1": 0.30578326027132285,
+        "rougeL": 0.235611890447201,
+        "n_samples": 100,
+        "time_seconds": 0.0
+      },
+      "sample_predictions": [
+        {
+          "id": "AGX5CFBYWX6MFVMIYXKUMOFZSTFA_B014I30MGQ",
+          "prediction": "I find it hard to believe that there were no previous Amazon Customer Reviews on this!............A little over three years ago: I bought the 2000 Electra &#34;Natalie Cole Greatest Hits: Volume 1&#34",
+          "reference": "Prior to this Review: there was only one previous Amazon Customer Review on this Excellent CD so I'll tell you a little bit about it......I bought this CD from Amazon under our former Amazon Customer "
+        },
+        {
+          "id": "AFNCZCYPCUY4I2HSBF4ZJVVY2RYA_B00IGECE2E",
+          "prediction": "Wrong cover than what was shown",
+          "reference": "OLD SABBATH ON CASSETTE..ONE ARRIVED YESTERDAY..TODAY THE OTHER..ITS 2 VOL SET..LITTLE PRICEY..IM A COLLECTER OF BLACK SABBATH"
+        },
+        {
+          "id": "AGSPHKLFX7OX3VNKHLMV23KZIYJA_B01L8PW9SQ",
+          "prediction": "Love this beautiful soundtrack. It's one of my absolute favorites! Roger Finnegan",
+          "reference": "A fantastic collection of pop music covering the period just before the Beatles and the British Invasion, Motown and all the great SOUL MUSIC shook things up.I loved the girl groups from that period W"
+        },
+        {
+          "id": "AENQZB2PFLM3HDPDZ7NSUKSUZS2Q_B00WQXBPB2",
+          "prediction": "Excellent sound, even disc 1 which has processing expected of 1950s Sun Records operating on a shoestring. The repetition of Ooby Dooby, Paper Boy, With the Bug can drive one to distraction. Especiall",
+          "reference": "From someone's collection off vinyl, good songs subject to lo-fi transcription. Click of rotation sometimes audible too. Phasing was reversed sometimes which hurt my head to hear as was raised on the "
+        },
+        {
+          "id": "AF3OXXJBTKMLTQAXUWNESUNU3SDQ_B008VTXSYC",
+          "prediction": "I admit - I ordered the wrong one... I wanted volume 3... but this has a lot of good music on it, including &#34;Komm Susser, Tod&#34;- an unexpected bonus, as I didn't know the name of the song from ",
+          "reference": "With so many songs, I haven't listened to them all yet, but the selection is amazing!  A lot of gems in this set!<br />Glad I got the extended 18-disc set!!!"
+        }
+      ]
+    },
+    "Input Copy": {
+      "tier": "Tier 1",
+      "scores": {
+        "rouge1": 0.04675577631593941,
+        "rougeL": 0.0435289802272693,
+        "n_samples": 100,
+        "time_seconds": 0.0
+      },
+      "sample_predictions": [
+        {
+          "id": "AGX5CFBYWX6MFVMIYXKUMOFZSTFA_B014I30MGQ",
+          "prediction": "Greatest Hits By Nancy Sinatra (2003-07-14)",
+          "reference": "Prior to this Review: there was only one previous Amazon Customer Review on this Excellent CD so I'll tell you a little bit about it......I bought this CD from Amazon under our former Amazon Customer "
+        },
+        {
+          "id": "AFNCZCYPCUY4I2HSBF4ZJVVY2RYA_B00IGECE2E",
+          "prediction": "Black Sabbath- The Collection- Parts 1 & 2 {2 Audio",
+          "reference": "OLD SABBATH ON CASSETTE..ONE ARRIVED YESTERDAY..TODAY THE OTHER..ITS 2 VOL SET..LITTLE PRICEY..IM A COLLECTER OF BLACK SABBATH"
+        },
+        {
+          "id": "AGSPHKLFX7OX3VNKHLMV23KZIYJA_B01L8PW9SQ",
+          "prediction": "Classic Love Songs of Rock and Roll - Classic Rock",
+          "reference": "A fantastic collection of pop music covering the period just before the Beatles and the British Invasion, Motown and all the great SOUL MUSIC shook things up.I loved the girl groups from that period W"
+        },
+        {
+          "id": "AENQZB2PFLM3HDPDZ7NSUKSUZS2Q_B00WQXBPB2",
+          "prediction": "Rock Bottom (CD)",
+          "reference": "From someone's collection off vinyl, good songs subject to lo-fi transcription. Click of rotation sometimes audible too. Phasing was reversed sometimes which hurt my head to hear as was raised on the "
+        },
+        {
+          "id": "AF3OXXJBTKMLTQAXUWNESUNU3SDQ_B008VTXSYC",
+          "prediction": "GOLDEN AGE of COUNTRY (10 CD Boxed Set)",
+          "reference": "With so many songs, I haven't listened to them all yet, but the selection is amazing!  A lot of gems in this set!<br />Glad I got the extended 18-disc set!!!"
+        }
+      ]
+    },
+    "TF-IDF Retrieval": {
+      "tier": "Tier 2",
+      "scores": {
+        "rouge1": 0.22777152170523532,
+        "rougeL": 0.1563382394885827,
+        "n_samples": 100,
+        "time_seconds": 0.14
+      },
+      "sample_predictions": [
+        {
+          "id": "AGX5CFBYWX6MFVMIYXKUMOFZSTFA_B014I30MGQ",
+          "prediction": "1995 Sony Music Entertainment Inc. Made In USA..........I just recently became acquanted with these \"Time Life: Legendary Country Singers\" single CD's and I am impressed. I had previously owned other ",
+          "reference": "Prior to this Review: there was only one previous Amazon Customer Review on this Excellent CD so I'll tell you a little bit about it......I bought this CD from Amazon under our former Amazon Customer "
+        },
+        {
+          "id": "AFNCZCYPCUY4I2HSBF4ZJVVY2RYA_B00IGECE2E",
+          "prediction": "THIS IS ALSO A RUSSIAN IMPORT--OUT OF PRINT EYE THINK--IF U LIKE TONY MARTIN WITH BLACK SABBATH THEN PICK UP THIS CD AND ALL THE OTHERS BEFORE THEY R OUT OF PRINT WHICH MOST R BUT STILL GET THEM FROM ",
+          "reference": "OLD SABBATH ON CASSETTE..ONE ARRIVED YESTERDAY..TODAY THE OTHER..ITS 2 VOL SET..LITTLE PRICEY..IM A COLLECTER OF BLACK SABBATH"
+        },
+        {
+          "id": "AGSPHKLFX7OX3VNKHLMV23KZIYJA_B01L8PW9SQ",
+          "prediction": "Love this beautiful soundtrack. It's one of my absolute favorites! Roger Finnegan",
+          "reference": "A fantastic collection of pop music covering the period just before the Beatles and the British Invasion, Motown and all the great SOUL MUSIC shook things up.I loved the girl groups from that period W"
+        },
+        {
+          "id": "AENQZB2PFLM3HDPDZ7NSUKSUZS2Q_B00WQXBPB2",
+          "prediction": "Needle drops and performances that are actually listenable.  Thought I had most all surf music, but here are many new-to-me alternative/forgotten/unreleased tracks. Soundwise better than SURF AGE NUGG",
+          "reference": "From someone's collection off vinyl, good songs subject to lo-fi transcription. Click of rotation sometimes audible too. Phasing was reversed sometimes which hurt my head to hear as was raised on the "
+        },
+        {
+          "id": "AF3OXXJBTKMLTQAXUWNESUNU3SDQ_B008VTXSYC",
+          "prediction": "I'm barely halfway through the first disc, and I'm EXTREMELY pleased with this purchase!<br />(I bought it used though... I can't spend almost seven grand for a new set. \u263a )<br /><br />I knew George s",
+          "reference": "With so many songs, I haven't listened to them all yet, but the selection is amazing!  A lot of gems in this set!<br />Glad I got the extended 18-disc set!!!"
+        }
+      ]
+    },
+    "BM25 Retrieval": {
+      "tier": "Tier 2",
+      "scores": {
+        "rouge1": 0.22773789086554636,
+        "rougeL": 0.15684834957805818,
+        "n_samples": 100,
+        "time_seconds": 0.14
+      },
+      "sample_predictions": [
+        {
+          "id": "AGX5CFBYWX6MFVMIYXKUMOFZSTFA_B014I30MGQ",
+          "prediction": "I find it hard to believe that there were no previous Amazon Customer Reviews on this!............A little over three years ago: I bought the 2000 Electra &#34;Natalie Cole Greatest Hits: Volume 1&#34",
+          "reference": "Prior to this Review: there was only one previous Amazon Customer Review on this Excellent CD so I'll tell you a little bit about it......I bought this CD from Amazon under our former Amazon Customer "
+        },
+        {
+          "id": "AFNCZCYPCUY4I2HSBF4ZJVVY2RYA_B00IGECE2E",
+          "prediction": "THIS IS ALSO A RUSSIAN IMPORT--OUT OF PRINT EYE THINK--IF U LIKE TONY MARTIN WITH BLACK SABBATH THEN PICK UP THIS CD AND ALL THE OTHERS BEFORE THEY R OUT OF PRINT WHICH MOST R BUT STILL GET THEM FROM ",
+          "reference": "OLD SABBATH ON CASSETTE..ONE ARRIVED YESTERDAY..TODAY THE OTHER..ITS 2 VOL SET..LITTLE PRICEY..IM A COLLECTER OF BLACK SABBATH"
+        },
+        {
+          "id": "AGSPHKLFX7OX3VNKHLMV23KZIYJA_B01L8PW9SQ",
+          "prediction": "Love this beautiful soundtrack. It's one of my absolute favorites! Roger Finnegan",
+          "reference": "A fantastic collection of pop music covering the period just before the Beatles and the British Invasion, Motown and all the great SOUL MUSIC shook things up.I loved the girl groups from that period W"
+        },
+        {
+          "id": "AENQZB2PFLM3HDPDZ7NSUKSUZS2Q_B00WQXBPB2",
+          "prediction": "Needle drops and performances that are actually listenable.  Thought I had most all surf music, but here are many new-to-me alternative/forgotten/unreleased tracks. Soundwise better than SURF AGE NUGG",
+          "reference": "From someone's collection off vinyl, good songs subject to lo-fi transcription. Click of rotation sometimes audible too. Phasing was reversed sometimes which hurt my head to hear as was raised on the "
+        },
+        {
+          "id": "AF3OXXJBTKMLTQAXUWNESUNU3SDQ_B008VTXSYC",
+          "prediction": "I'm barely halfway through the first disc, and I'm EXTREMELY pleased with this purchase!<br />(I bought it used though... I can't spend almost seven grand for a new set. \u263a )<br /><br />I knew George s",
+          "reference": "With so many songs, I haven't listened to them all yet, but the selection is amazing!  A lot of gems in this set!<br />Glad I got the extended 18-disc set!!!"
+        }
+      ]
+    }
+  }
+}
